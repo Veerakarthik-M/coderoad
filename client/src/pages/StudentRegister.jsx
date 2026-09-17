@@ -23,12 +23,13 @@ const LOCATIONS = [
   'Ettimadai','Coimbatore','Amritapuri',
 ].sort();
 
-// Step 0: Personal + Email OTP
-// Step 1: College details
-// Step 2: Travel / Route
-// Step 3: ID Card Upload
-// Step 4: Review & Submit
-const STEPS = ['Personal', 'College', 'Travel', 'Documents', 'Review'];
+// Step 0: Student Type (School vs College)
+// Step 1: Personal + Email OTP
+// Step 2: College details
+// Step 3: Travel / Route
+// Step 4: ID Card Upload
+// Step 5: Review & Submit
+const STEPS = ['Student Type', 'Personal', 'Institution', 'Travel', 'Documents', 'Review'];
 
 const INITIAL_FORM = {
   // Personal
@@ -269,6 +270,8 @@ export default function StudentRegister({ onAuth }) {
   const validateStep = () => {
     const errors = {};
     if (step === 0) {
+      if (!form.studentType) errors.studentType = 'Please select a student type';
+    } else if (step === 1) {
       if (!form.name.trim()) errors.name = 'Full name is required';
       if (!form.dateOfBirth) errors.dateOfBirth = 'Date of birth is required';
       if (!form.gender) errors.gender = 'Please select a gender';
@@ -283,14 +286,14 @@ export default function StudentRegister({ onAuth }) {
       if (!form.place.trim()) errors.place = 'Place is required';
       if (!form.pincode.match(/^\d{6}$/)) errors.pincode = 'Enter a valid 6-digit PIN code';
       if (!form.district) errors.district = 'Please select a district';
-    } else if (step === 1) {
+    } else if (step === 2) {
       if (!form.institutionId) errors.institutionId = 'Please select your institution';
       if (!form.rollNo.trim()) errors.rollNo = 'Roll / register number is required';
       if (!form.course.trim()) errors.course = 'Course name is required';
-    } else if (step === 2) {
+    } else if (step === 3) {
       if (!form.routeFrom.trim()) errors.routeFrom = 'Boarding point is required';
       if (!form.routeTo.trim()) errors.routeTo = 'Destination is required';
-    } else if (step === 3) {
+    } else if (step === 4) {
       if (!idCardFile) errors.idCard = 'Please upload your institution ID card';
     }
     return errors;
@@ -424,8 +427,45 @@ export default function StudentRegister({ onAuth }) {
 
         <div className="card card--padded">
 
-          {/* ── STEP 0: Personal Details + Email OTP ─────────── */}
+          {/* ── STEP 0: Institution Type ─────────────── */}
           {step === 0 && (
+            <div>
+              <div className="card__section-label">Student Type</div>
+
+              <div className="form-group">
+                <label className="form-label" htmlFor="c-type">I am a student at a <span className="required">*</span></label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.625rem', marginTop: '0.375rem' }}>
+                  {[
+                    { id: 'type-college', value: 'college', label: '🎓 College / University', desc: 'B.Tech, Degree, Post Grad, Diploma…' },
+                    { id: 'type-school', value: 'school', label: '🏫 School', desc: 'Class 8–12, SSC, CBSE, ICSE, Plus Two…' },
+                  ].map(opt => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      id={opt.id}
+                      onClick={() => set('studentType', opt.value)}
+                      style={{
+                        padding: '0.875rem',
+                        background: form.studentType === opt.value ? 'var(--primary-light)' : 'var(--bg-elevated)',
+                        border: `2px solid ${form.studentType === opt.value ? 'var(--primary)' : 'var(--border)'}`,
+                        borderRadius: 'var(--radius-lg)',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        transition: 'border-color 0.15s, background 0.15s',
+                      }}
+                    >
+                      <div style={{ fontWeight: 700, color: 'var(--text)', marginBottom: '0.2rem' }}>{opt.label}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{opt.desc}</div>
+                    </button>
+                  ))}
+                </div>
+                <FieldError msg={fieldErrors.studentType} />
+              </div>
+            </div>
+          )}
+
+          {/* ── STEP 1: Personal Details + Email OTP ─────────── */}
+          {step === 1 && (
             <div>
               <div className="card__section-label">Personal Information</div>
 
@@ -480,6 +520,11 @@ export default function StudentRegister({ onAuth }) {
               {/* Email + OTP verification */}
               <div className="form-group">
                 <label className="form-label" htmlFor="p-email">Email Address <span className="required">*</span></label>
+                {form.studentType === 'college' && (
+                  <div style={{ fontSize: '0.75rem', color: 'var(--primary)', marginBottom: '0.5rem', fontWeight: 600 }}>
+                    💡 Tip: Use your official college email (e.g. .edu.in) if you have one. It speeds up institution approval.
+                  </div>
+                )}
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   <input
                     id="p-email"
@@ -567,41 +612,10 @@ export default function StudentRegister({ onAuth }) {
             </div>
           )}
 
-          {/* ── STEP 1: College / School Details ─────────────── */}
-          {step === 1 && (
+          {/* ── STEP 2: College / School Details ─────────────── */}
+          {step === 2 && (
             <div>
-              <div className="card__section-label">Institution Type</div>
-
-              <div className="form-group">
-                <label className="form-label" htmlFor="c-type">I am a student at a <span className="required">*</span></label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.625rem', marginTop: '0.375rem' }}>
-                  {[
-                    { id: 'type-college', value: 'college', label: '🎓 College / University', desc: 'B.Tech, MBBS, BA, MA, Diploma…' },
-                    { id: 'type-school', value: 'school', label: '🏫 School', desc: 'Class 8–12, SSC, CBSE, ICSE…' },
-                  ].map(opt => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      id={opt.id}
-                      onClick={() => set('studentType', opt.value)}
-                      style={{
-                        padding: '0.875rem',
-                        background: form.studentType === opt.value ? 'var(--primary-light)' : 'var(--bg-elevated)',
-                        border: `2px solid ${form.studentType === opt.value ? 'var(--primary)' : 'var(--border)'}`,
-                        borderRadius: 'var(--radius-lg)',
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        transition: 'border-color 0.15s, background 0.15s',
-                      }}
-                    >
-                      <div style={{ fontWeight: 700, color: 'var(--text)', marginBottom: '0.2rem' }}>{opt.label}</div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{opt.desc}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="card__section-label" style={{ marginTop: '1rem' }}>Institution Details</div>
+              <div className="card__section-label">Institution Details</div>
 
               <div className="form-group">
                 <label className="form-label" htmlFor="c-institution">Select Institution <span className="required">*</span></label>
@@ -682,8 +696,8 @@ export default function StudentRegister({ onAuth }) {
             </div>
           )}
 
-          {/* ── STEP 2: Travel / Route Details ──────────────── */}
-          {step === 2 && (
+          {/* ── STEP 3: Travel / Route Details ──────────────── */}
+          {step === 3 && (
             <div>
               <div className="card__section-label">Travel / Concession Details</div>
 
@@ -726,8 +740,8 @@ export default function StudentRegister({ onAuth }) {
             </div>
           )}
 
-          {/* ── STEP 3: Document Upload ──────────────────────── */}
-          {step === 3 && (
+          {/* ── STEP 4: Document Upload ──────────────────────── */}
+          {step === 4 && (
             <div>
               <div className="card__section-label">
                 {isSchool ? 'School ID Card Upload' : 'College ID Card Upload'}
@@ -768,8 +782,8 @@ export default function StudentRegister({ onAuth }) {
             </div>
           )}
 
-          {/* ── STEP 4: Review & Submit ──────────────────────── */}
-          {step === 4 && (
+          {/* ── STEP 5: Review & Submit ──────────────────────── */}
+          {step === 5 && (
             <div>
               <div className="card__section-label">Review Your Application</div>
               <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1.25rem' }}>
@@ -778,8 +792,23 @@ export default function StudentRegister({ onAuth }) {
 
               <div className="review-section">
                 <div className="review-section__header">
-                  <div className="review-section__title">Personal Details</div>
+                  <div className="review-section__title">Student Type</div>
                   <button className="btn btn--ghost btn--sm" onClick={() => setStep(0)}>Edit</button>
+                </div>
+                <div className="review-fields">
+                  <div className="review-field">
+                    <span className="review-field__label">Type</span>
+                    <span className="review-field__value">
+                      {form.studentType === 'school' ? '🏫 School Student' : '🎓 College / University Student'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="review-section">
+                <div className="review-section__header">
+                  <div className="review-section__title">Personal Details</div>
+                  <button className="btn btn--ghost btn--sm" onClick={() => setStep(1)}>Edit</button>
                 </div>
                 <div className="review-fields">
                   {[
@@ -802,7 +831,7 @@ export default function StudentRegister({ onAuth }) {
               <div className="review-section">
                 <div className="review-section__header">
                   <div className="review-section__title">Institution Details</div>
-                  <button className="btn btn--ghost btn--sm" onClick={() => setStep(1)}>Edit</button>
+                  <button className="btn btn--ghost btn--sm" onClick={() => setStep(2)}>Edit</button>
                 </div>
                 <div className="review-fields">
                   {[
@@ -825,7 +854,7 @@ export default function StudentRegister({ onAuth }) {
               <div className="review-section">
                 <div className="review-section__header">
                   <div className="review-section__title">Travel Details</div>
-                  <button className="btn btn--ghost btn--sm" onClick={() => setStep(2)}>Edit</button>
+                  <button className="btn btn--ghost btn--sm" onClick={() => setStep(3)}>Edit</button>
                 </div>
                 <div className="review-fields">
                   {[
@@ -844,7 +873,7 @@ export default function StudentRegister({ onAuth }) {
               <div className="review-section">
                 <div className="review-section__header">
                   <div className="review-section__title">Documents</div>
-                  <button className="btn btn--ghost btn--sm" onClick={() => setStep(3)}>Edit</button>
+                  <button className="btn btn--ghost btn--sm" onClick={() => setStep(4)}>Edit</button>
                 </div>
                 <div className="review-fields">
                   <div className="review-field">
@@ -873,7 +902,7 @@ export default function StudentRegister({ onAuth }) {
             >
               ← Back
             </button>
-            {step < 4 ? (
+            {step < 5 ? (
               <button className="btn btn--primary" onClick={handleNext} id="reg-next">
                 Continue →
               </button>
