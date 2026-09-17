@@ -69,13 +69,20 @@ export async function sendOTP(toEmail, purpose = 'registration') {
   `;
 
   if (transporter) {
-    await transporter.sendMail({
-      from: process.env.EMAIL_FROM || `"ANAVANDI" <${process.env.EMAIL_USER}>`,
-      to: toEmail,
-      subject,
-      html,
-    });
-    console.log(`📧 OTP sent to ${toEmail}`);
+    try {
+      await transporter.sendMail({
+        from: process.env.EMAIL_FROM || `"ANAVANDI" <${process.env.EMAIL_USER}>`,
+        to: toEmail,
+        subject,
+        html,
+      });
+      console.log(`📧 OTP sent to ${toEmail}`);
+    } catch (err) {
+      console.error(`\n❌ Failed to send email via SMTP (Check Credentials). Falling back to Demo Mode:`, err.message);
+      console.log(`\n${'='.repeat(50)}`);
+      console.log(`📧 DEMO MODE FALLBACK — OTP for ${toEmail}: ${otp}`);
+      console.log(`${'='.repeat(50)}\n`);
+    }
   } else {
     // Demo mode — print to console
     console.log(`\n${'='.repeat(50)}`);
