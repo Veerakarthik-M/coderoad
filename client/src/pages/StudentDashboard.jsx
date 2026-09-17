@@ -61,10 +61,12 @@ export default function StudentDashboard() {
   return (
     <div className="page">
       <div className="container container--narrow">
-        <div className="page-header">
-          <div className="page-header__eyebrow">Student Portal</div>
-          <h1 className="page-header__title">Welcome, {user?.name}</h1>
-          <p className="page-header__subtitle">Student Concession Application Dashboard</p>
+        <div className="dashboard-hero">
+          <div className="dashboard-hero__content">
+            <div className="dashboard-hero__eyebrow">Student Portal</div>
+            <h1 className="dashboard-hero__title">Welcome, {user?.name}</h1>
+            <p className="dashboard-hero__subtitle">Student Concession Application Dashboard</p>
+          </div>
         </div>
 
         {/* No application yet */}

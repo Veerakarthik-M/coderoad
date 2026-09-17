@@ -94,10 +94,12 @@ export default function AdminDashboard() {
   return (
     <div className="page">
       <div className="container">
-        <div className="page-header">
-          <div className="page-header__eyebrow">KSRTC Platform Admin</div>
-          <h1 className="page-header__title">Admin Dashboard</h1>
-          <p className="page-header__subtitle">Approve concession applications, issue and revoke credentials</p>
+        <div className="dashboard-hero">
+          <div className="dashboard-hero__content">
+            <div className="dashboard-hero__eyebrow">KSRTC Platform Admin</div>
+            <h1 className="dashboard-hero__title">Admin Dashboard</h1>
+            <p className="dashboard-hero__subtitle">Approve concession applications, issue and revoke credentials</p>
+          </div>
         </div>
 
         {stats && (

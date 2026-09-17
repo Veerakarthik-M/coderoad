@@ -485,10 +485,12 @@ export default function InstitutionDashboard() {
   return (
     <div className="page">
       <div className="container">
-        <div className="page-header">
-          <div className="page-header__eyebrow">Institution Portal</div>
-          <h1 className="page-header__title">{stats?.institution?.name || 'Institution Dashboard'}</h1>
-          <p className="page-header__subtitle">{stats?.institution?.place}, {stats?.institution?.district}</p>
+        <div className="dashboard-hero">
+          <div className="dashboard-hero__content">
+            <div className="dashboard-hero__eyebrow">Institution Portal</div>
+            <h1 className="dashboard-hero__title">{stats?.institution?.name || 'Institution Dashboard'}</h1>
+            <p className="dashboard-hero__subtitle">{stats?.institution?.place}, {stats?.institution?.district}</p>
+          </div>
         </div>
 
         {stats && (

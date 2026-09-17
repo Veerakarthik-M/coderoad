@@ -1,7 +1,8 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { useState } from 'react';
 import { api } from './api';
 import Navbar from './components/Navbar';
+import Sidebar from './components/Sidebar';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import StudentRegister from './pages/StudentRegister';
@@ -20,6 +21,23 @@ function ProtectedRoute({ children, role }) {
   return children;
 }
 
+function AppShell({ user, onLogout }) {
+  if (!user) return <Outlet />;
+  
+  return (
+    <div className="app-shell">
+      <div className="app-shell__sidebar">
+        <Sidebar user={user} onLogout={onLogout} />
+      </div>
+      <div className="app-shell__main">
+        <div className="app-shell__content">
+          <Outlet />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [user, setUser] = useState(api.getUser());
 
@@ -36,28 +54,32 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <Navbar user={user} onLogout={handleLogout} />
+      <Navbar user={user} />
       <Routes>
         <Route path="/" element={<Landing user={user} />} />
         <Route path="/login" element={<Login onAuth={handleAuth} />} />
         <Route path="/register/student" element={<StudentRegister onAuth={handleAuth} />} />
         <Route path="/register/institution" element={<InstitutionRegister onAuth={handleAuth} />} />
         
-        <Route path="/student" element={
-          <ProtectedRoute role="student"><StudentDashboard /></ProtectedRoute>
-        } />
-        <Route path="/student/pass" element={
-          <ProtectedRoute role="student"><StudentPass /></ProtectedRoute>
-        } />
+        {/* App Shell for Dashboards */}
+        <Route element={<AppShell user={user} onLogout={handleLogout} />}>
+          <Route path="/student" element={
+            <ProtectedRoute role="student"><StudentDashboard /></ProtectedRoute>
+          } />
+          <Route path="/student/pass" element={
+            <ProtectedRoute role="student"><StudentPass /></ProtectedRoute>
+          } />
+          
+          <Route path="/institution" element={
+            <ProtectedRoute role="institution"><InstitutionDashboard /></ProtectedRoute>
+          } />
+          
+          <Route path="/admin" element={
+            <ProtectedRoute role="admin"><AdminDashboard /></ProtectedRoute>
+          } />
+        </Route>
         
-        <Route path="/institution" element={
-          <ProtectedRoute role="institution"><InstitutionDashboard /></ProtectedRoute>
-        } />
-        
-        <Route path="/admin" element={
-          <ProtectedRoute role="admin"><AdminDashboard /></ProtectedRoute>
-        } />
-        
+        {/* Conductor app runs standalone */}
         <Route path="/conductor" element={<ConductorVerifier />} />
         
         <Route path="*" element={<Navigate to="/" />} />

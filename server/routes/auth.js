@@ -1,9 +1,9 @@
-// Auth routes — register and login for all roles
+﻿// Auth routes â€” register and login for all roles
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { queryOne, queryAll, execute, saveDb } from '../db.js';
-import { sendOTP } from '../utils/email.js';
+
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'anavandi-hackathon-2026-secret';
@@ -134,7 +134,7 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// GET /api/auth/me — get current user
+// GET /api/auth/me â€” get current user
 router.get('/me', authMiddleware, (req, res) => {
   const user = queryOne('SELECT id, role, email, name, phone FROM users WHERE id = ?', [req.user.id]);
   if (!user) return res.status(404).json({ error: 'User not found' });
@@ -147,89 +147,11 @@ router.get('/me', authMiddleware, (req, res) => {
   res.json({ user, institution });
 });
 
-// GET /api/auth/institutions — list all institutions (for student registration dropdown)
+// GET /api/auth/institutions â€” list all institutions (for student registration dropdown)
 router.get('/institutions', (req, res) => {
   const institutions = queryAll('SELECT id, name, place, district, institution_type, education_level FROM institutions ORDER BY name');
   res.json(institutions);
 });
 
-// POST /api/auth/send-otp — generate and send a 6-digit OTP to the email
-// Used during student registration to verify the email address
-router.post('/send-otp', async (req, res) => {
-  try {
-    const { email } = req.body;
-    if (!email || !email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-      return res.status(400).json({ error: 'Valid email address is required' });
-    }
-
-    // Rate-limit: check if an OTP was sent in the last 60 seconds
-    const recent = queryOne(
-      `SELECT * FROM otp_tokens WHERE email = ? AND created_at > datetime('now', '-60 seconds') AND used = 0`,
-      [email]
-    );
-    if (recent) {
-      return res.status(429).json({ error: 'Please wait 60 seconds before requesting a new OTP' });
-    }
-
-    // Invalidate previous unused OTPs for this email
-    execute(
-      `UPDATE otp_tokens SET used = 1 WHERE email = ? AND used = 0`,
-      [email]
-    );
-
-    const { otp, emailSent } = await sendOTP(email, 'registration');
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 minutes
-
-    execute(
-      `INSERT INTO otp_tokens (email, otp, expires_at) VALUES (?, ?, ?)`,
-      [email, otp, expiresAt]
-    );
-    saveDb();
-
-    if (emailSent) {
-      res.json({ message: 'OTP sent to your email address', email });
-    } else {
-      // Demo / SMTP fallback — return OTP directly so frontend can show it on screen
-      res.json({
-        message: 'Email could not be sent. Use the code shown below.',
-        email,
-        demoOtp: otp,
-      });
-    }
-  } catch (err) {
-    console.error('Send OTP error:', err);
-    res.status(500).json({ error: 'Failed to send OTP. Check server email configuration.' });
-  }
-});
-
-// POST /api/auth/verify-otp — verify an OTP for an email
-router.post('/verify-otp', (req, res) => {
-  try {
-    const { email, otp } = req.body;
-    if (!email || !otp) {
-      return res.status(400).json({ error: 'Email and OTP are required' });
-    }
-
-    const token = queryOne(
-      `SELECT * FROM otp_tokens 
-       WHERE email = ? AND otp = ? AND used = 0 AND expires_at > datetime('now')
-       ORDER BY created_at DESC LIMIT 1`,
-      [email, String(otp).trim()]
-    );
-
-    if (!token) {
-      return res.status(400).json({ error: 'Invalid or expired OTP. Please request a new one.' });
-    }
-
-    // Mark as used
-    execute(`UPDATE otp_tokens SET used = 1 WHERE id = ?`, [token.id]);
-    saveDb();
-
-    res.json({ verified: true, email });
-  } catch (err) {
-    console.error('Verify OTP error:', err);
-    res.status(500).json({ error: 'OTP verification failed' });
-  }
-});
-
 export default router;
+

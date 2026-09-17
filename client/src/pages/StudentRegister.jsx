@@ -112,145 +112,6 @@ function FileUpload({ label, id, accept, hint, onFile, file, required = false })
   );
 }
 
-// ── OTP Input ────────────────────────────────────────────────
-function OTPSection({ email, emailVerified, onVerified }) {
-  const [otpSent, setOtpSent] = useState(false);
-  const [otp, setOtp] = useState('');
-  const [demoOtp, setDemoOtp] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [resendTimer, setResendTimer] = useState(0);
-
-  useEffect(() => {
-    if (resendTimer > 0) {
-      const t = setTimeout(() => setResendTimer(r => r - 1), 1000);
-      return () => clearTimeout(t);
-    }
-  }, [resendTimer]);
-
-  const sendOTP = async () => {
-    if (!email) { setError('Please enter your email address first'); return; }
-    setError('');
-    setDemoOtp('');
-    setLoading(true);
-    try {
-      const res = await api.post('/auth/send-otp', { email });
-      setOtpSent(true);
-      setResendTimer(60);
-      if (res.demoOtp) {
-        setDemoOtp(res.demoOtp);
-      }
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const verifyOTP = async () => {
-    if (!otp.trim()) { setError('Enter the 6-digit code'); return; }
-    setError('');
-    setLoading(true);
-    try {
-      await api.post('/auth/verify-otp', { email, otp });
-      onVerified();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (emailVerified) {
-    return (
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: '0.5rem',
-        padding: '0.5rem 0.75rem', background: 'var(--success-light)',
-        border: '1px solid rgba(14,122,79,0.3)', borderRadius: 'var(--radius-md)',
-        fontSize: '0.875rem', fontWeight: 600, color: '#34d399',
-      }}>
-        ✅ Email verified — {email}
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '1rem', marginTop: '0.25rem' }}>
-      <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>
-        Email Verification Required
-      </div>
-
-      {error && <div className="alert alert--error" style={{ marginBottom: '0.75rem' }}>{error}</div>}
-
-      {!otpSent ? (
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <button
-            type="button"
-            className="btn btn--primary btn--sm"
-            onClick={sendOTP}
-            disabled={loading || !email}
-            id="send-otp-btn"
-          >
-            {loading ? <span className="spinner" /> : 'Send Verification Code'}
-          </button>
-        </div>
-      ) : (
-        <div>
-          {demoOtp ? (
-            <div style={{ background: '#fefce8', border: '2px solid #eab308', borderRadius: '8px', padding: '0.75rem 1rem', marginBottom: '0.75rem' }}>
-              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#854d0e', marginBottom: '0.25rem' }}>
-                ⚠️ Email delivery unavailable — use this code:
-              </div>
-              <div style={{ fontFamily: 'monospace', fontSize: '1.75rem', fontWeight: 800, letterSpacing: '0.3em', color: '#78350f' }}>
-                {demoOtp}
-              </div>
-              <div style={{ fontSize: '0.7rem', color: '#92400e', marginTop: '0.25rem' }}>
-                Copy this code and paste it below. Valid for 10 minutes.
-              </div>
-            </div>
-          ) : (
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.625rem', margin: '0 0 0.625rem' }}>
-              A 6-digit code was sent to <strong style={{ color: 'var(--text)' }}>{email}</strong>.
-              Check your inbox (and spam folder).
-            </p>
-          )}
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-            <input
-              className="form-input"
-              style={{ maxWidth: '140px', fontFamily: 'monospace', fontSize: '1.125rem', letterSpacing: '0.3em', textAlign: 'center' }}
-              placeholder="000000"
-              value={otp}
-              onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-              maxLength={6}
-              id="otp-input"
-              autoComplete="one-time-code"
-            />
-            <button
-              type="button"
-              className="btn btn--success btn--sm"
-              onClick={verifyOTP}
-              disabled={loading || otp.length !== 6}
-              id="verify-otp-btn"
-            >
-              {loading ? <span className="spinner" /> : 'Verify'}
-            </button>
-          </div>
-          <button
-            type="button"
-            className="btn btn--ghost btn--sm"
-            onClick={sendOTP}
-            disabled={loading || resendTimer > 0}
-            style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}
-            id="resend-otp-btn"
-          >
-            {resendTimer > 0 ? `Resend in ${resendTimer}s` : 'Resend code'}
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ── Main Component ───────────────────────────────────────────
 export default function StudentRegister({ onAuth }) {
   const navigate = useNavigate();
@@ -270,7 +131,6 @@ export default function StudentRegister({ onAuth }) {
 
   const set = (field, value) => {
     setForm(prev => ({ ...prev, [field]: value }));
-    if (field === 'email') setEmailVerified(false);
     if (fieldErrors[field]) {
       setFieldErrors(prev => { const n = { ...prev }; delete n[field]; return n; });
     }
@@ -297,7 +157,6 @@ export default function StudentRegister({ onAuth }) {
       if (!form.guardianName.trim()) errors.guardianName = 'Guardian name is required';
       if (!form.phone.match(/^[6-9]\d{9}$/)) errors.phone = 'Enter a valid 10-digit mobile number';
       if (!form.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) errors.email = 'Enter a valid email address';
-      else if (!emailVerified) errors.email = 'Please verify your email with the OTP before continuing';
       if (!form.username.trim()) errors.username = 'Username is required';
       if (form.password.length < 6) errors.password = 'Password must be at least 6 characters';
       if (form.password !== form.confirmPassword) errors.confirmPassword = 'Passwords do not match';
@@ -426,12 +285,12 @@ export default function StudentRegister({ onAuth }) {
     || form.studentType === 'school';
 
   return (
-    <div className="page">
-      <div className="container container--narrow">
-        <div className="page-header" style={{ textAlign: 'center' }}>
-          <div className="page-header__eyebrow">ANAVANDI · KSRTC</div>
-          <h1 className="page-header__title">Student Concession Pass Application</h1>
-          <p className="page-header__subtitle">
+    <div className="register-shell">
+      <div className="register-container">
+        <div className="register-header">
+          <div className="register-header__subtitle" style={{ color: 'var(--blue-600)', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '0.5rem', fontSize: '0.75rem' }}>ANAVANDI · KSRTC</div>
+          <h1 className="register-header__title">Student Concession Pass Application</h1>
+          <p className="register-header__subtitle">
             Complete all steps to apply for your digital bus concession pass
           </p>
         </div>
@@ -444,7 +303,8 @@ export default function StudentRegister({ onAuth }) {
           </div>
         )}
 
-        <div className="card card--padded">
+        <div className="register-step-card" style={{ boxShadow: 'var(--shadow-lg)', border: 'none' }}>
+          <div className="register-step-card__body">
 
           {/* ── STEP 0: Institution Type ─────────────── */}
           {step === 0 && (
@@ -536,7 +396,6 @@ export default function StudentRegister({ onAuth }) {
                 </div>
               </div>
 
-              {/* Email + OTP verification */}
               <div className="form-group">
                 <label className="form-label" htmlFor="p-email">Email Address <span className="required">*</span></label>
                 {form.studentType === 'college' && (
@@ -544,32 +403,17 @@ export default function StudentRegister({ onAuth }) {
                     💡 Tip: Use your official college email (e.g. .edu.in) if you have one. It speeds up institution approval.
                   </div>
                 )}
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <input
-                    id="p-email"
-                    type="email"
-                    className="form-input"
-                    value={form.email}
-                    onChange={e => set('email', e.target.value)}
-                    placeholder="your@email.com"
-                    autoComplete="email"
-                    style={{ flex: 1 }}
-                    disabled={emailVerified}
-                  />
-                  {emailVerified && (
-                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => { setEmailVerified(false); set('email', form.email); }} style={{ whiteSpace: 'nowrap' }}>
-                      Change
-                    </button>
-                  )}
-                </div>
+                <input
+                  id="p-email"
+                  type="email"
+                  className="form-input"
+                  value={form.email}
+                  onChange={e => set('email', e.target.value)}
+                  placeholder="your@email.com"
+                  autoComplete="email"
+                />
                 <FieldError msg={fieldErrors.email} />
               </div>
-
-              <OTPSection
-                email={form.email}
-                emailVerified={emailVerified}
-                onVerified={() => setEmailVerified(true)}
-              />
 
               <div className="form-row" style={{ marginTop: '1rem' }}>
                 <div className="form-group">
@@ -931,6 +775,7 @@ export default function StudentRegister({ onAuth }) {
               </button>
             )}
           </div>
+        </div>
         </div>
       </div>
     </div>

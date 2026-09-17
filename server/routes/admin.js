@@ -1,4 +1,4 @@
-// Admin routes — KSRTC admin: final approval, credential issuance, revocation
+﻿// Admin routes â€” KSRTC admin: final approval, credential issuance, revocation
 import { Router } from 'express';
 import { authMiddleware, requireRole } from './auth.js';
 import { queryOne, queryAll, execute, saveDb } from '../db.js';
@@ -6,7 +6,7 @@ import { signCredential } from '../crypto/sign.js';
 
 const router = Router();
 
-// GET /api/admin/applications — get all institution-approved applications
+// GET /api/admin/applications â€” get all institution-approved applications
 router.get('/applications', authMiddleware, requireRole('admin'), (req, res) => {
   try {
     const applications = queryAll(
@@ -32,7 +32,7 @@ router.get('/applications', authMiddleware, requireRole('admin'), (req, res) => 
   }
 });
 
-// POST /api/admin/approve/:id — approve and issue credential
+// POST /api/admin/approve/:id â€” approve and issue credential
 router.post('/approve/:id', authMiddleware, requireRole('admin'), async (req, res) => {
   try {
     const app = queryOne(
@@ -62,7 +62,7 @@ router.post('/approve/:id', authMiddleware, requireRole('admin'), async (req, re
       sid: app.roll_no,
       name: app.student_name,
       inst: app.institution_name,
-      route: `${app.route_from} → ${app.route_to}`,
+      route: `${app.route_from} â†’ ${app.route_to}`,
       km: app.distance_km,
       type: 'Student Concession',
       from: validFrom,
@@ -101,7 +101,7 @@ router.post('/approve/:id', authMiddleware, requireRole('admin'), async (req, re
   }
 });
 
-// POST /api/admin/reject/:id — reject application
+// POST /api/admin/reject/:id â€” reject application
 router.post('/reject/:id', authMiddleware, requireRole('admin'), (req, res) => {
   try {
     const { reason } = req.body;
@@ -126,7 +126,7 @@ router.post('/reject/:id', authMiddleware, requireRole('admin'), (req, res) => {
   }
 });
 
-// POST /api/admin/revoke/:credentialId — revoke an issued credential
+// POST /api/admin/revoke/:credentialId â€” revoke an issued credential
 router.post('/revoke/:credentialId', authMiddleware, requireRole('admin'), (req, res) => {
   try {
     const { reason } = req.body;
@@ -151,7 +151,7 @@ router.post('/revoke/:credentialId', authMiddleware, requireRole('admin'), (req,
   }
 });
 
-// GET /api/admin/stats — dashboard statistics
+// GET /api/admin/stats â€” dashboard statistics
 router.get('/stats', authMiddleware, requireRole('admin'), (req, res) => {
   try {
     const total = queryOne('SELECT COUNT(*) as count FROM applications');
@@ -177,7 +177,7 @@ router.get('/stats', authMiddleware, requireRole('admin'), (req, res) => {
   }
 });
 
-// GET /api/admin/credentials — list all issued credentials
+// GET /api/admin/credentials â€” list all issued credentials
 router.get('/credentials', authMiddleware, requireRole('admin'), (req, res) => {
   try {
     const credentials = queryAll(
@@ -196,4 +196,29 @@ router.get('/credentials', authMiddleware, requireRole('admin'), (req, res) => {
   }
 });
 
+// DELETE /api/admin/reset-database -- force re-seed (demo only)
+router.delete('/reset-database', authMiddleware, requireRole('admin'), async (req, res) => {
+  try {
+    const { getDb, saveDb: sd, execute: ex } = await import('../db.js');
+    await getDb();
+    ex('DELETE FROM verification_events');
+    ex('DELETE FROM credentials');
+    ex('DELETE FROM applications');
+    ex('DELETE FROM institutions');
+    ex('DELETE FROM users');
+    sd();
+    const { seedIfEmpty } = await import('../seed.js');
+    // Force re-seed
+    const { queryOne: qo } = await import('../db.js');
+    await import('../seed.js').then(m => m.seedIfEmpty && null);
+    // manual re-seed
+    const bcrypt = (await import('bcryptjs')).default;
+    res.json({ message: 'Database cleared. Restart the server to re-seed, or call /api/admin/force-seed' });
+  } catch (err) {
+    console.error('Reset error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;
+
