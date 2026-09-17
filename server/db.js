@@ -126,6 +126,33 @@ export async function getDb() {
     )
   `);
 
+  // OTP tokens for email verification
+  db.run(`
+    CREATE TABLE IF NOT EXISTS otp_tokens (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      email TEXT NOT NULL,
+      otp TEXT NOT NULL,
+      expires_at TEXT NOT NULL,
+      used INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now'))
+    )
+  `);
+
+  // Document uploads — ID cards and photos submitted by students
+  db.run(`
+    CREATE TABLE IF NOT EXISTS document_uploads (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      application_id INTEGER REFERENCES applications(id),
+      student_user_id INTEGER REFERENCES users(id),
+      doc_type TEXT NOT NULL CHECK(doc_type IN ('id_card','photo','other')),
+      original_name TEXT,
+      stored_path TEXT NOT NULL,
+      mime_type TEXT,
+      file_size INTEGER,
+      uploaded_at TEXT DEFAULT (datetime('now'))
+    )
+  `);
+
   // Travel/verification events — created when conductor scans a pass
   db.run(`
     CREATE TABLE IF NOT EXISTS verification_events (

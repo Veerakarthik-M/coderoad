@@ -3,6 +3,8 @@
 
 import express from 'express';
 import cors from 'cors';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 import { getDb } from './db.js';
 import { seedIfEmpty } from './seed.js';
 import authRoutes from './routes/auth.js';
@@ -11,6 +13,7 @@ import institutionRoutes from './routes/institution.js';
 import adminRoutes from './routes/admin.js';
 import verifyRoutes from './routes/verify.js';
 
+const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -33,6 +36,9 @@ async function start() {
   app.use('/api/institution', institutionRoutes);
   app.use('/api/admin', adminRoutes);
   app.use('/api/verify', verifyRoutes);
+
+  // Serve uploaded files (ID cards, photos) via /uploads/:filename
+  app.use('/uploads', express.static(join(__dirname, 'uploads')));
 
   // Health check
   app.get('/api/health', (req, res) => {

@@ -118,6 +118,19 @@ function ApplicationsTab({ institutionId }) {
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
                           Applied: {fmtDate(app.created_at)} · {app.student_email}
                         </div>
+                        {app.document_path && (
+                          <div style={{ marginTop: '0.375rem' }}>
+                            <a 
+                              href={`${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:3001'}/uploads/${app.document_path}`} 
+                              target="_blank" 
+                              rel="noreferrer"
+                              className="btn btn--outline btn--sm"
+                              style={{ fontSize: '0.6875rem', padding: '0.25rem 0.5rem' }}
+                            >
+                              📎 View ID Card
+                            </a>
+                          </div>
+                        )}
                       </div>
                       {rejectId === app.id ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', minWidth: '200px' }}>
@@ -184,7 +197,21 @@ function ApplicationsTab({ institutionId }) {
                         <td><strong>{app.student_name}</strong><br /><span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{app.student_email}</span></td>
                         <td>{app.roll_no}</td>
                         <td>{app.course}</td>
-                        <td>{app.route_from} → {app.route_to}</td>
+                        <td>
+                          {app.route_from} → {app.route_to}
+                          {app.document_path && (
+                            <div style={{ marginTop: '0.25rem' }}>
+                              <a 
+                                href={`${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:3001'}/uploads/${app.document_path}`} 
+                                target="_blank" 
+                                rel="noreferrer"
+                                style={{ fontSize: '0.6875rem', color: 'var(--primary)', textDecoration: 'none', fontWeight: 600 }}
+                              >
+                                📎 View ID
+                              </a>
+                            </div>
+                          )}
+                        </td>
                         <td>{statusBadge(app.status)}</td>
                         <td>{fmtDate(app.created_at)}</td>
                       </tr>

@@ -171,6 +171,19 @@ export default function AdminDashboard() {
                               Route: {app.route_from} → {app.route_to}
                               {app.distance_km ? ` · ${app.distance_km} km` : ''}
                             </div>
+                            {app.document_path && (
+                              <div style={{ marginTop: '0.375rem' }}>
+                                <a 
+                                  href={`${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:3001'}/uploads/${app.document_path}`} 
+                                  target="_blank" 
+                                  rel="noreferrer"
+                                  className="btn btn--outline btn--sm"
+                                  style={{ fontSize: '0.6875rem', padding: '0.25rem 0.5rem' }}
+                                >
+                                  📎 View ID Card
+                                </a>
+                              </div>
+                            )}
                           </div>
                           {rejectId === app.id ? (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', minWidth: '200px' }}>
@@ -226,7 +239,21 @@ export default function AdminDashboard() {
                             <td><strong>{app.student_name}</strong><br /><span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{app.student_email}</span></td>
                             <td style={{ fontSize: '0.85rem' }}>{app.institution_name}</td>
                             <td style={{ fontSize: '0.85rem' }}>{app.course}</td>
-                            <td style={{ fontSize: '0.85rem' }}>{app.route_from} → {app.route_to}</td>
+                            <td style={{ fontSize: '0.85rem' }}>
+                              {app.route_from} → {app.route_to}
+                              {app.document_path && (
+                                <div style={{ marginTop: '0.25rem' }}>
+                                  <a 
+                                    href={`${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:3001'}/uploads/${app.document_path}`} 
+                                    target="_blank" 
+                                    rel="noreferrer"
+                                    style={{ fontSize: '0.6875rem', color: 'var(--primary)', textDecoration: 'none', fontWeight: 600 }}
+                                  >
+                                    📎 View ID
+                                  </a>
+                                </div>
+                              )}
+                            </td>
                             <td>{statusBadge(app.status)}</td>
                             <td style={{ fontSize: '0.8rem' }}>{fmtDate(app.created_at)}</td>
                           </tr>

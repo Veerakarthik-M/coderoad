@@ -1,7 +1,38 @@
-// Student routes — application CRUD and pass display
+// Student routes — application CRUD, pass display, and document upload
 import { Router } from 'express';
 import { authMiddleware, requireRole } from './auth.js';
 import { queryOne, queryAll, execute, saveDb } from '../db.js';
+import multer from 'multer';
+import { join, dirname, extname } from 'path';
+import { fileURLToPath } from 'url';
+import { mkdirSync } from 'fs';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const UPLOADS_DIR = join(__dirname, '..', 'uploads');
+mkdirSync(UPLOADS_DIR, { recursive: true });
+
+// Multer config: store ID cards to disk with unique filename
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, UPLOADS_DIR),
+  filename: (req, file, cb) => {
+    const ext = extname(file.originalname) || '.jpg';
+    const name = `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`;
+    cb(null, name);
+  },
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB max
+  fileFilter: (req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+    if (allowed.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only images (JPEG, PNG, WebP) and PDF files are allowed'));
+    }
+  },
+});
 
 const router = Router();
 
@@ -113,6 +144,84 @@ router.get('/pass', authMiddleware, requireRole('student'), (req, res) => {
       qrData: credential.jws_token
     }
   });
+});
+
+// POST /api/student/upload-id — upload student ID card or photo
+// Accepts a single file under field name 'document'
+// doc_type: 'id_card' | 'photo' | 'other'
+router.post(
+  '/upload-id',
+  authMiddleware,
+  requireRole('student'),
+  upload.single('document'),
+  (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded' });
+      }
+
+      const docType = req.body.doc_type || 'id_card';
+      const applicationId = req.body.application_id ? parseInt(req.body.application_id) : null;
+
+      // Verify this application belongs to the student if provided
+      if (applicationId) {
+        const app = queryOne(
+          'SELECT id FROM applications WHERE id = ? AND student_user_id = ?',
+          [applicationId, req.user.id]
+        );
+        if (!app) {
+          return res.status(403).json({ error: 'Application not found or access denied' });
+        }
+
+        // Update the application document path
+        const colName = docType === 'photo' ? 'photo_path' : 'document_path';
+        execute(
+          `UPDATE applications SET ${colName} = ?, updated_at = datetime('now') WHERE id = ?`,
+          [req.file.filename, applicationId]
+        );
+      }
+
+      // Record in document_uploads table
+      const uploadId = execute(
+        `INSERT INTO document_uploads 
+         (application_id, student_user_id, doc_type, original_name, stored_path, mime_type, file_size)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [
+          applicationId,
+          req.user.id,
+          docType,
+          req.file.originalname,
+          req.file.filename,
+          req.file.mimetype,
+          req.file.size,
+        ]
+      );
+      saveDb();
+
+      res.status(201).json({
+        uploadId,
+        filename: req.file.filename,
+        originalName: req.file.originalname,
+        size: req.file.size,
+        mimeType: req.file.mimetype,
+        docType,
+        message: 'File uploaded successfully',
+      });
+    } catch (err) {
+      console.error('Upload error:', err);
+      res.status(500).json({ error: err.message || 'Upload failed' });
+    }
+  }
+);
+
+// GET /api/student/documents — list uploaded documents for this student
+router.get('/documents', authMiddleware, requireRole('student'), (req, res) => {
+  const docs = queryAll(
+    `SELECT id, doc_type, original_name, stored_path, mime_type, file_size, uploaded_at
+     FROM document_uploads WHERE student_user_id = ? ORDER BY uploaded_at DESC`,
+    [req.user.id]
+  );
+  res.json({ documents: docs });
 });
 
 export default router;

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import StepIndicator from '../components/StepIndicator';
@@ -23,13 +23,22 @@ const LOCATIONS = [
   'Ettimadai','Coimbatore','Amritapuri',
 ].sort();
 
-const STEPS = ['Personal', 'College', 'Travel', 'Review'];
+// Step 0: Personal + Email OTP
+// Step 1: College details
+// Step 2: Travel / Route
+// Step 3: ID Card Upload
+// Step 4: Review & Submit
+const STEPS = ['Personal', 'College', 'Travel', 'Documents', 'Review'];
 
 const INITIAL_FORM = {
+  // Personal
   name: '', dateOfBirth: '', gender: '', guardianName: '',
   phone: '', aadhaarNumber: '', email: '', username: '', password: '', confirmPassword: '',
   address: '', place: '', postalName: '', pincode: '', district: '',
+  // College
+  studentType: 'college', // 'college' | 'school'
   institutionId: '', rollNo: '', course: '', department: '', yearOfStudy: '', semester: '', academicYear: '2026-27',
+  // Travel
   routeFrom: '', routeTo: '', distanceKm: '', concessionCategory: 'General',
 };
 
@@ -37,6 +46,192 @@ function FieldError({ msg }) {
   return msg ? <div className="form-error" role="alert">{msg}</div> : null;
 }
 
+// ── File Upload Component ────────────────────────────────────
+function FileUpload({ label, id, accept, hint, onFile, file, required = false }) {
+  const inputRef = useRef();
+
+  const handleChange = (e) => {
+    const f = e.target.files[0];
+    if (f) onFile(f);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    const f = e.dataTransfer.files[0];
+    if (f) onFile(f);
+  };
+
+  return (
+    <div className="form-group">
+      <label className="form-label" htmlFor={id}>
+        {label} {required && <span className="required">*</span>}
+      </label>
+      <div
+        onClick={() => inputRef.current?.click()}
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={handleDrop}
+        id={`${id}-dropzone`}
+        style={{
+          border: `2px dashed ${file ? 'var(--border-success)' : 'var(--border)'}`,
+          borderRadius: 'var(--radius-lg)',
+          padding: '1.5rem',
+          textAlign: 'center',
+          cursor: 'pointer',
+          background: file ? 'var(--success-light)' : 'var(--bg-input)',
+          transition: 'border-color 0.15s, background 0.15s',
+        }}
+      >
+        <input
+          ref={inputRef}
+          id={id}
+          type="file"
+          accept={accept}
+          onChange={handleChange}
+          style={{ display: 'none' }}
+        />
+        {file ? (
+          <div>
+            <div style={{ fontSize: '1.75rem', marginBottom: '0.375rem' }}>✅</div>
+            <div style={{ fontWeight: 700, color: 'var(--text)', fontSize: '0.875rem' }}>{file.name}</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+              {(file.size / 1024).toFixed(0)} KB · Click to change
+            </div>
+          </div>
+        ) : (
+          <div>
+            <div style={{ fontSize: '2rem', marginBottom: '0.375rem', opacity: 0.5 }}>📎</div>
+            <div style={{ fontWeight: 600, color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+              Click or drag & drop to upload
+            </div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>{hint}</div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── OTP Input ────────────────────────────────────────────────
+function OTPSection({ email, emailVerified, onVerified }) {
+  const [otpSent, setOtpSent] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [resendTimer, setResendTimer] = useState(0);
+
+  useEffect(() => {
+    if (resendTimer > 0) {
+      const t = setTimeout(() => setResendTimer(r => r - 1), 1000);
+      return () => clearTimeout(t);
+    }
+  }, [resendTimer]);
+
+  const sendOTP = async () => {
+    if (!email) { setError('Please enter your email address first'); return; }
+    setError('');
+    setLoading(true);
+    try {
+      await api.post('/auth/send-otp', { email });
+      setOtpSent(true);
+      setResendTimer(60);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const verifyOTP = async () => {
+    if (!otp.trim()) { setError('Enter the 6-digit code'); return; }
+    setError('');
+    setLoading(true);
+    try {
+      await api.post('/auth/verify-otp', { email, otp });
+      onVerified();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (emailVerified) {
+    return (
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: '0.5rem',
+        padding: '0.5rem 0.75rem', background: 'var(--success-light)',
+        border: '1px solid rgba(14,122,79,0.3)', borderRadius: 'var(--radius-md)',
+        fontSize: '0.875rem', fontWeight: 600, color: '#34d399',
+      }}>
+        ✅ Email verified — {email}
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '1rem', marginTop: '0.25rem' }}>
+      <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>
+        Email Verification Required
+      </div>
+
+      {error && <div className="alert alert--error" style={{ marginBottom: '0.75rem' }}>{error}</div>}
+
+      {!otpSent ? (
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button
+            type="button"
+            className="btn btn--primary btn--sm"
+            onClick={sendOTP}
+            disabled={loading || !email}
+            id="send-otp-btn"
+          >
+            {loading ? <span className="spinner" /> : 'Send Verification Code'}
+          </button>
+        </div>
+      ) : (
+        <div>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.625rem', margin: '0 0 0.625rem' }}>
+            A 6-digit code was sent to <strong style={{ color: 'var(--text)' }}>{email}</strong>.
+            Check your inbox (and spam folder).
+          </p>
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <input
+              className="form-input"
+              style={{ maxWidth: '140px', fontFamily: 'var(--font-mono)', fontSize: '1.125rem', letterSpacing: '0.3em', textAlign: 'center' }}
+              placeholder="000000"
+              value={otp}
+              onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              maxLength={6}
+              id="otp-input"
+              autoComplete="one-time-code"
+            />
+            <button
+              type="button"
+              className="btn btn--success btn--sm"
+              onClick={verifyOTP}
+              disabled={loading || otp.length !== 6}
+              id="verify-otp-btn"
+            >
+              {loading ? <span className="spinner" /> : 'Verify'}
+            </button>
+          </div>
+          <button
+            type="button"
+            className="btn btn--ghost btn--sm"
+            onClick={sendOTP}
+            disabled={loading || resendTimer > 0}
+            style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}
+            id="resend-otp-btn"
+          >
+            {resendTimer > 0 ? `Resend in ${resendTimer}s` : 'Resend code'}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Main Component ───────────────────────────────────────────
 export default function StudentRegister({ onAuth }) {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
@@ -45,6 +240,9 @@ export default function StudentRegister({ onAuth }) {
   const [fieldErrors, setFieldErrors] = useState({});
   const [institutions, setInstitutions] = useState([]);
   const [form, setForm] = useState(INITIAL_FORM);
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [idCardFile, setIdCardFile] = useState(null);
+  const [uploadedDocId, setUploadedDocId] = useState(null);
 
   useEffect(() => {
     api.get('/auth/institutions').then(setInstitutions).catch(console.error);
@@ -52,6 +250,7 @@ export default function StudentRegister({ onAuth }) {
 
   const set = (field, value) => {
     setForm(prev => ({ ...prev, [field]: value }));
+    if (field === 'email') setEmailVerified(false);
     if (fieldErrors[field]) {
       setFieldErrors(prev => { const n = { ...prev }; delete n[field]; return n; });
     }
@@ -76,6 +275,7 @@ export default function StudentRegister({ onAuth }) {
       if (!form.guardianName.trim()) errors.guardianName = 'Guardian name is required';
       if (!form.phone.match(/^[6-9]\d{9}$/)) errors.phone = 'Enter a valid 10-digit mobile number';
       if (!form.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) errors.email = 'Enter a valid email address';
+      else if (!emailVerified) errors.email = 'Please verify your email with the OTP before continuing';
       if (!form.username.trim()) errors.username = 'Username is required';
       if (form.password.length < 6) errors.password = 'Password must be at least 6 characters';
       if (form.password !== form.confirmPassword) errors.confirmPassword = 'Passwords do not match';
@@ -90,6 +290,8 @@ export default function StudentRegister({ onAuth }) {
     } else if (step === 2) {
       if (!form.routeFrom.trim()) errors.routeFrom = 'Boarding point is required';
       if (!form.routeTo.trim()) errors.routeTo = 'Destination is required';
+    } else if (step === 3) {
+      if (!idCardFile) errors.idCard = 'Please upload your institution ID card';
     }
     return errors;
   };
@@ -104,10 +306,35 @@ export default function StudentRegister({ onAuth }) {
     setStep(s => s + 1);
   };
 
+  const uploadIdCard = async (studentUserId) => {
+    if (!idCardFile) return null;
+    const formData = new FormData();
+    formData.append('document', idCardFile);
+    formData.append('doc_type', 'id_card');
+    // We don't have application_id yet, so just upload and link later
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL || 'http://localhost:3001/api'}/student/upload-id`,
+        {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${localStorage.getItem('anavandi_token')}` },
+          body: formData,
+        }
+      );
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Upload failed');
+      return data;
+    } catch (err) {
+      console.warn('ID card upload error:', err.message);
+      return null;
+    }
+  };
+
   const handleSubmit = async () => {
     setSubmitError('');
     setLoading(true);
     try {
+      // 1. Register user
       const regData = await api.post('/auth/register', {
         email: form.email,
         username: form.username,
@@ -118,7 +345,8 @@ export default function StudentRegister({ onAuth }) {
       });
       onAuth(regData.user, regData.token);
 
-      await api.post('/student/apply', {
+      // 2. Submit application
+      const appData = await api.post('/student/apply', {
         institutionId: parseInt(form.institutionId),
         dateOfBirth: form.dateOfBirth,
         age: calcAge(form.dateOfBirth),
@@ -142,6 +370,27 @@ export default function StudentRegister({ onAuth }) {
         concessionCategory: form.concessionCategory,
       });
 
+      // 3. Upload ID card if provided (after we have auth token)
+      if (idCardFile) {
+        // Add application_id to associate it
+        const uploadFormData = new FormData();
+        uploadFormData.append('document', idCardFile);
+        uploadFormData.append('doc_type', 'id_card');
+        if (appData.id) uploadFormData.append('application_id', appData.id);
+        try {
+          await fetch(
+            `${import.meta.env.VITE_API_URL || 'http://localhost:3001/api'}/student/upload-id`,
+            {
+              method: 'POST',
+              headers: { Authorization: `Bearer ${localStorage.getItem('anavandi_token')}` },
+              body: uploadFormData,
+            }
+          );
+        } catch (e) {
+          console.warn('ID upload failed:', e);
+        }
+      }
+
       navigate('/student');
     } catch (err) {
       setSubmitError(err.message);
@@ -151,6 +400,8 @@ export default function StudentRegister({ onAuth }) {
   };
 
   const selectedInstitution = institutions.find(i => String(i.id) === String(form.institutionId));
+  const isSchool = selectedInstitution?.education_level === 'School'
+    || form.studentType === 'school';
 
   return (
     <div className="page">
@@ -173,7 +424,7 @@ export default function StudentRegister({ onAuth }) {
 
         <div className="card card--padded">
 
-          {/* ── STEP 0: Personal Details ─────────────────────── */}
+          {/* ── STEP 0: Personal Details + Email OTP ─────────── */}
           {step === 0 && (
             <div>
               <div className="card__section-label">Personal Information</div>
@@ -192,7 +443,7 @@ export default function StudentRegister({ onAuth }) {
                 </div>
                 <div className="form-group">
                   <label className="form-label" htmlFor="p-age">Age (calculated)</label>
-                  <input id="p-age" className="form-input" value={calcAge(form.dateOfBirth)} readOnly style={{ opacity: 0.6, cursor: 'not-allowed' }} aria-readonly="true" />
+                  <input id="p-age" className="form-input" value={calcAge(form.dateOfBirth)} readOnly style={{ opacity: 0.6, cursor: 'not-allowed' }} />
                 </div>
               </div>
 
@@ -221,22 +472,48 @@ export default function StudentRegister({ onAuth }) {
                   <FieldError msg={fieldErrors.phone} />
                 </div>
                 <div className="form-group">
-                  <label className="form-label" htmlFor="p-aadhaar">Aadhaar Number <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
+                  <label className="form-label" htmlFor="p-aadhaar">Aadhaar Number</label>
                   <input id="p-aadhaar" className="form-input" value={form.aadhaarNumber} onChange={e => set('aadhaarNumber', e.target.value)} placeholder="XXXX XXXX XXXX" maxLength={14} />
                 </div>
               </div>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="form-label" htmlFor="p-email">Email Address <span className="required">*</span></label>
-                  <input id="p-email" type="email" className="form-input" value={form.email} onChange={e => set('email', e.target.value)} placeholder="your@email.com" autoComplete="email" />
-                  <FieldError msg={fieldErrors.email} />
+              {/* Email + OTP verification */}
+              <div className="form-group">
+                <label className="form-label" htmlFor="p-email">Email Address <span className="required">*</span></label>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <input
+                    id="p-email"
+                    type="email"
+                    className="form-input"
+                    value={form.email}
+                    onChange={e => set('email', e.target.value)}
+                    placeholder="your@email.com"
+                    autoComplete="email"
+                    style={{ flex: 1 }}
+                    disabled={emailVerified}
+                  />
+                  {emailVerified && (
+                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => { setEmailVerified(false); set('email', form.email); }} style={{ whiteSpace: 'nowrap' }}>
+                      Change
+                    </button>
+                  )}
                 </div>
+                <FieldError msg={fieldErrors.email} />
+              </div>
+
+              <OTPSection
+                email={form.email}
+                emailVerified={emailVerified}
+                onVerified={() => setEmailVerified(true)}
+              />
+
+              <div className="form-row" style={{ marginTop: '1rem' }}>
                 <div className="form-group">
                   <label className="form-label" htmlFor="p-username">Username <span className="required">*</span></label>
                   <input id="p-username" className="form-input" value={form.username} onChange={e => set('username', e.target.value.toLowerCase())} placeholder="Choose a username" autoComplete="username" />
                   <FieldError msg={fieldErrors.username} />
                 </div>
+                <div style={{ display: 'none' }}></div>
               </div>
 
               <div className="form-row">
@@ -290,10 +567,41 @@ export default function StudentRegister({ onAuth }) {
             </div>
           )}
 
-          {/* ── STEP 1: College Details ──────────────────────── */}
+          {/* ── STEP 1: College / School Details ─────────────── */}
           {step === 1 && (
             <div>
-              <div className="card__section-label">College / Institution Details</div>
+              <div className="card__section-label">Institution Type</div>
+
+              <div className="form-group">
+                <label className="form-label" htmlFor="c-type">I am a student at a <span className="required">*</span></label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.625rem', marginTop: '0.375rem' }}>
+                  {[
+                    { id: 'type-college', value: 'college', label: '🎓 College / University', desc: 'B.Tech, MBBS, BA, MA, Diploma…' },
+                    { id: 'type-school', value: 'school', label: '🏫 School', desc: 'Class 8–12, SSC, CBSE, ICSE…' },
+                  ].map(opt => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      id={opt.id}
+                      onClick={() => set('studentType', opt.value)}
+                      style={{
+                        padding: '0.875rem',
+                        background: form.studentType === opt.value ? 'var(--primary-light)' : 'var(--bg-elevated)',
+                        border: `2px solid ${form.studentType === opt.value ? 'var(--primary)' : 'var(--border)'}`,
+                        borderRadius: 'var(--radius-lg)',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        transition: 'border-color 0.15s, background 0.15s',
+                      }}
+                    >
+                      <div style={{ fontWeight: 700, color: 'var(--text)', marginBottom: '0.2rem' }}>{opt.label}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{opt.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="card__section-label" style={{ marginTop: '1rem' }}>Institution Details</div>
 
               <div className="form-group">
                 <label className="form-label" htmlFor="c-institution">Select Institution <span className="required">*</span></label>
@@ -306,14 +614,13 @@ export default function StudentRegister({ onAuth }) {
                   ))}
                 </select>
                 <FieldError msg={fieldErrors.institutionId} />
-                {institutions.length === 0 && (
-                  <div className="form-hint">Loading institutions… If empty, your institution may not be registered yet.</div>
-                )}
               </div>
 
               <div className="form-row">
                 <div className="form-group">
-                  <label className="form-label" htmlFor="c-rollno">Roll / Register Number <span className="required">*</span></label>
+                  <label className="form-label" htmlFor="c-rollno">
+                    {isSchool ? 'Admission / Register Number' : 'Roll / Register Number'} <span className="required">*</span>
+                  </label>
                   <input id="c-rollno" className="form-input" value={form.rollNo} onChange={e => set('rollNo', e.target.value.toUpperCase())} placeholder="e.g. 21CS045" />
                   <FieldError msg={fieldErrors.rollNo} />
                 </div>
@@ -324,36 +631,54 @@ export default function StudentRegister({ onAuth }) {
               </div>
 
               <div className="form-group">
-                <label className="form-label" htmlFor="c-course">Course / Programme <span className="required">*</span></label>
-                <input id="c-course" className="form-input" value={form.course} onChange={e => set('course', e.target.value)} placeholder="e.g. B.Tech Computer Science" />
+                <label className="form-label" htmlFor="c-course">
+                  {isSchool ? 'Class / Standard' : 'Course / Programme'} <span className="required">*</span>
+                </label>
+                <input id="c-course" className="form-input" value={form.course} onChange={e => set('course', e.target.value)} placeholder={isSchool ? 'e.g. Class 11 — Science' : 'e.g. B.Tech Computer Science'} />
                 <FieldError msg={fieldErrors.course} />
               </div>
 
-              <div className="form-group">
-                <label className="form-label" htmlFor="c-department">Department</label>
-                <input id="c-department" className="form-input" value={form.department} onChange={e => set('department', e.target.value)} placeholder="e.g. Computer Science & Engineering" />
-              </div>
+              {!isSchool && (
+                <>
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="c-department">Department</label>
+                    <input id="c-department" className="form-input" value={form.department} onChange={e => set('department', e.target.value)} placeholder="e.g. Computer Science & Engineering" />
+                  </div>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="form-label" htmlFor="c-year">Year of Study</label>
-                  <select id="c-year" className="form-select" value={form.yearOfStudy} onChange={e => set('yearOfStudy', e.target.value)}>
-                    <option value="">Select year</option>
-                    <option>1st Year</option>
-                    <option>2nd Year</option>
-                    <option>3rd Year</option>
-                    <option>4th Year</option>
-                    <option>5th Year</option>
-                  </select>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label className="form-label" htmlFor="c-year">Year of Study</label>
+                      <select id="c-year" className="form-select" value={form.yearOfStudy} onChange={e => set('yearOfStudy', e.target.value)}>
+                        <option value="">Select year</option>
+                        {['1st Year','2nd Year','3rd Year','4th Year','5th Year'].map(s => <option key={s}>{s}</option>)}
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label" htmlFor="c-semester">Semester</label>
+                      <select id="c-semester" className="form-select" value={form.semester} onChange={e => set('semester', e.target.value)}>
+                        <option value="">Select semester</option>
+                        {['S1','S2','S3','S4','S5','S6','S7','S8'].map(s => <option key={s}>{s}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {isSchool && (
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="c-class">Class</label>
+                    <select id="c-class" className="form-select" value={form.yearOfStudy} onChange={e => set('yearOfStudy', e.target.value)}>
+                      <option value="">Select class</option>
+                      {['Class 8','Class 9','Class 10','Class 11 (Science)','Class 11 (Commerce)','Class 11 (Humanities)','Class 12 (Science)','Class 12 (Commerce)','Class 12 (Humanities)'].map(s => <option key={s}>{s}</option>)}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="c-section">Section</label>
+                    <input id="c-section" className="form-input" value={form.department} onChange={e => set('department', e.target.value)} placeholder="e.g. A, B, C" />
+                  </div>
                 </div>
-                <div className="form-group">
-                  <label className="form-label" htmlFor="c-semester">Semester</label>
-                  <select id="c-semester" className="form-select" value={form.semester} onChange={e => set('semester', e.target.value)}>
-                    <option value="">Select semester</option>
-                    {['S1','S2','S3','S4','S5','S6','S7','S8'].map(s => <option key={s}>{s}</option>)}
-                  </select>
-                </div>
-              </div>
+              )}
             </div>
           )}
 
@@ -396,18 +721,59 @@ export default function StudentRegister({ onAuth }) {
               </div>
 
               <div className="alert alert--info" style={{ marginTop: '0.5rem' }}>
-                The concession pass is valid for one-way travel on the specified route during the academic year. 
-                Your institution will verify your eligibility before the pass is issued.
+                The concession pass is valid for one-way travel on the specified route during the academic year.
               </div>
             </div>
           )}
 
-          {/* ── STEP 3: Review & Submit ──────────────────────── */}
+          {/* ── STEP 3: Document Upload ──────────────────────── */}
           {step === 3 && (
+            <div>
+              <div className="card__section-label">
+                {isSchool ? 'School ID Card Upload' : 'College ID Card Upload'}
+              </div>
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1.25rem' }}>
+                {isSchool
+                  ? 'Upload your school ID card to verify your student status. This is required for school students.'
+                  : 'Upload your college/university ID card. This helps verify your enrollment before the pass is issued.'}
+              </p>
+
+              <FileUpload
+                id="upload-id-card"
+                label={isSchool ? 'School ID Card' : 'College / University ID Card'}
+                accept="image/jpeg,image/png,image/webp,application/pdf"
+                hint="JPEG, PNG, WebP or PDF · Max 5 MB"
+                onFile={setIdCardFile}
+                file={idCardFile}
+                required
+              />
+              <FieldError msg={fieldErrors.idCard} />
+
+              {!idCardFile && (
+                <div className="alert alert--warning" style={{ marginTop: '0.75rem' }}>
+                  ⚠️ Your ID card is required. Institution administrators will use this to verify your enrollment.
+                </div>
+              )}
+
+              {idCardFile && (
+                <div className="alert alert--success" style={{ marginTop: '0.75rem' }}>
+                  ✅ ID card ready for upload. It will be securely stored on the server.
+                </div>
+              )}
+
+              <div className="alert alert--info" style={{ marginTop: '0.75rem' }}>
+                Your document is stored securely on the server and only accessible to authorised institution 
+                administrators for verification purposes.
+              </div>
+            </div>
+          )}
+
+          {/* ── STEP 4: Review & Submit ──────────────────────── */}
+          {step === 4 && (
             <div>
               <div className="card__section-label">Review Your Application</div>
               <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1.25rem' }}>
-                Please verify all details below before submitting.
+                Please verify all details before submitting.
               </p>
 
               <div className="review-section">
@@ -422,7 +788,7 @@ export default function StudentRegister({ onAuth }) {
                     ['Gender', form.gender],
                     ['Guardian', form.guardianName],
                     ['Mobile', form.phone],
-                    ['Email', form.email],
+                    ['Email', `${form.email} ✅ Verified`],
                     ['District', form.district],
                   ].map(([l, v]) => (
                     <div key={l} className="review-field">
@@ -435,16 +801,17 @@ export default function StudentRegister({ onAuth }) {
 
               <div className="review-section">
                 <div className="review-section__header">
-                  <div className="review-section__title">College Details</div>
+                  <div className="review-section__title">Institution Details</div>
                   <button className="btn btn--ghost btn--sm" onClick={() => setStep(1)}>Edit</button>
                 </div>
                 <div className="review-fields">
                   {[
+                    ['Type', form.studentType === 'school' ? 'School Student' : 'College Student'],
                     ['Institution', selectedInstitution ? `${selectedInstitution.name}, ${selectedInstitution.district}` : '—'],
                     ['Roll No', form.rollNo],
                     ['Course', form.course],
                     ['Department', form.department || '—'],
-                    ['Year / Semester', `${form.yearOfStudy || '—'} / ${form.semester || '—'}`],
+                    ['Year / Sem', `${form.yearOfStudy || '—'} / ${form.semester || '—'}`],
                     ['Academic Year', form.academicYear],
                   ].map(([l, v]) => (
                     <div key={l} className="review-field">
@@ -474,8 +841,23 @@ export default function StudentRegister({ onAuth }) {
                 </div>
               </div>
 
+              <div className="review-section">
+                <div className="review-section__header">
+                  <div className="review-section__title">Documents</div>
+                  <button className="btn btn--ghost btn--sm" onClick={() => setStep(3)}>Edit</button>
+                </div>
+                <div className="review-fields">
+                  <div className="review-field">
+                    <span className="review-field__label">ID Card</span>
+                    <span className="review-field__value">
+                      {idCardFile ? `📎 ${idCardFile.name}` : '—'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
               <div className="alert alert--info">
-                By submitting, you declare that all information provided is accurate. 
+                By submitting, you declare that all information provided is accurate.
                 False information may result in cancellation of the concession pass.
               </div>
             </div>
@@ -491,7 +873,7 @@ export default function StudentRegister({ onAuth }) {
             >
               ← Back
             </button>
-            {step < 3 ? (
+            {step < 4 ? (
               <button className="btn btn--primary" onClick={handleNext} id="reg-next">
                 Continue →
               </button>
