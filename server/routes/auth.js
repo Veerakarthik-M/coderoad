@@ -177,7 +177,7 @@ router.post('/send-otp', async (req, res) => {
       [email]
     );
 
-    const otp = await sendOTP(email, 'registration');
+    const { otp, emailSent } = await sendOTP(email, 'registration');
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 minutes
 
     execute(
@@ -186,7 +186,16 @@ router.post('/send-otp', async (req, res) => {
     );
     saveDb();
 
-    res.json({ message: 'OTP sent to your email address', email });
+    if (emailSent) {
+      res.json({ message: 'OTP sent to your email address', email });
+    } else {
+      // Demo / SMTP fallback — return OTP directly so frontend can show it on screen
+      res.json({
+        message: 'Email could not be sent. Use the code shown below.',
+        email,
+        demoOtp: otp,
+      });
+    }
   } catch (err) {
     console.error('Send OTP error:', err);
     res.status(500).json({ error: 'Failed to send OTP. Check server email configuration.' });

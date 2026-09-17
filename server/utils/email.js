@@ -68,6 +68,8 @@ export async function sendOTP(toEmail, purpose = 'registration') {
     </div>
   `;
 
+  let emailSent = false;
+
   if (transporter) {
     try {
       await transporter.sendMail({
@@ -77,18 +79,15 @@ export async function sendOTP(toEmail, purpose = 'registration') {
         html,
       });
       console.log(`📧 OTP sent to ${toEmail}`);
+      emailSent = true;
     } catch (err) {
-      console.error(`\n❌ Failed to send email via SMTP (Check Credentials). Falling back to Demo Mode:`, err.message);
-      console.log(`\n${'='.repeat(50)}`);
+      console.error(`\n❌ SMTP failed, falling back to demo mode:`, err.message);
       console.log(`📧 DEMO MODE FALLBACK — OTP for ${toEmail}: ${otp}`);
-      console.log(`${'='.repeat(50)}\n`);
     }
   } else {
-    // Demo mode — print to console
-    console.log(`\n${'='.repeat(50)}`);
+    // No email configured — demo mode
     console.log(`📧 DEMO MODE — OTP for ${toEmail}: ${otp}`);
-    console.log(`${'='.repeat(50)}\n`);
   }
 
-  return otp;
+  return { otp, emailSent };
 }

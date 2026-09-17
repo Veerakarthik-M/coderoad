@@ -116,6 +116,7 @@ function FileUpload({ label, id, accept, hint, onFile, file, required = false })
 function OTPSection({ email, emailVerified, onVerified }) {
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState('');
+  const [demoOtp, setDemoOtp] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [resendTimer, setResendTimer] = useState(0);
@@ -130,11 +131,15 @@ function OTPSection({ email, emailVerified, onVerified }) {
   const sendOTP = async () => {
     if (!email) { setError('Please enter your email address first'); return; }
     setError('');
+    setDemoOtp('');
     setLoading(true);
     try {
-      await api.post('/auth/send-otp', { email });
+      const res = await api.post('/auth/send-otp', { email });
       setOtpSent(true);
       setResendTimer(60);
+      if (res.demoOtp) {
+        setDemoOtp(res.demoOtp);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -191,14 +196,28 @@ function OTPSection({ email, emailVerified, onVerified }) {
         </div>
       ) : (
         <div>
-          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.625rem', margin: '0 0 0.625rem' }}>
-            A 6-digit code was sent to <strong style={{ color: 'var(--text)' }}>{email}</strong>.
-            Check your inbox (and spam folder).
-          </p>
+          {demoOtp ? (
+            <div style={{ background: '#fefce8', border: '2px solid #eab308', borderRadius: '8px', padding: '0.75rem 1rem', marginBottom: '0.75rem' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#854d0e', marginBottom: '0.25rem' }}>
+                ⚠️ Email delivery unavailable — use this code:
+              </div>
+              <div style={{ fontFamily: 'monospace', fontSize: '1.75rem', fontWeight: 800, letterSpacing: '0.3em', color: '#78350f' }}>
+                {demoOtp}
+              </div>
+              <div style={{ fontSize: '0.7rem', color: '#92400e', marginTop: '0.25rem' }}>
+                Copy this code and paste it below. Valid for 10 minutes.
+              </div>
+            </div>
+          ) : (
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.625rem', margin: '0 0 0.625rem' }}>
+              A 6-digit code was sent to <strong style={{ color: 'var(--text)' }}>{email}</strong>.
+              Check your inbox (and spam folder).
+            </p>
+          )}
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
             <input
               className="form-input"
-              style={{ maxWidth: '140px', fontFamily: 'var(--font-mono)', fontSize: '1.125rem', letterSpacing: '0.3em', textAlign: 'center' }}
+              style={{ maxWidth: '140px', fontFamily: 'monospace', fontSize: '1.125rem', letterSpacing: '0.3em', textAlign: 'center' }}
               placeholder="000000"
               value={otp}
               onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
