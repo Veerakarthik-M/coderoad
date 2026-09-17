@@ -4,6 +4,7 @@
 import express from 'express';
 import cors from 'cors';
 import { getDb } from './db.js';
+import { seedIfEmpty } from './seed.js';
 import authRoutes from './routes/auth.js';
 import studentRoutes from './routes/student.js';
 import institutionRoutes from './routes/institution.js';
@@ -22,6 +23,9 @@ app.use(express.urlencoded({ extended: true }));
 async function start() {
   await getDb();
   console.log('📦 Database initialized');
+  
+  // Auto-seed demo data if database is empty (handles ephemeral Render restarts)
+  await seedIfEmpty();
 
   // Routes
   app.use('/api/auth', authRoutes);

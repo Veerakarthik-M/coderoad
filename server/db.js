@@ -80,12 +80,16 @@ export async function getDb() {
       -- Institution details
       roll_no TEXT,
       course TEXT,
+      department TEXT,
+      year_of_study TEXT,
+      semester TEXT,
       academic_year TEXT,
       
       -- Route details
       route_from TEXT,
       route_to TEXT,
       distance_km REAL,
+      concession_category TEXT DEFAULT 'General',
       
       -- Documents (file paths)
       photo_path TEXT,
@@ -119,6 +123,29 @@ export async function getDb() {
       result TEXT,
       mode TEXT,
       verified_at TEXT DEFAULT (datetime('now'))
+    )
+  `);
+
+  // Travel/verification events — created when conductor scans a pass
+  db.run(`
+    CREATE TABLE IF NOT EXISTS verification_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      credential_id TEXT NOT NULL,
+      student_name TEXT,
+      institution_name TEXT,
+      institution_id INTEGER,
+      student_user_id INTEGER,
+      route_from TEXT,
+      route_to TEXT,
+      pass_id TEXT,
+      conductor_id INTEGER,
+      conductor_name TEXT,
+      verification_mode TEXT NOT NULL CHECK(verification_mode IN ('ONLINE','OFFLINE')),
+      verification_result TEXT NOT NULL CHECK(verification_result IN ('VALID','INVALID','EXPIRED','REVOKED','TAMPERED')),
+      verified_at TEXT NOT NULL,
+      synced_at TEXT DEFAULT (datetime('now')),
+      device_id TEXT,
+      notes TEXT
     )
   `);
 

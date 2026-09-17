@@ -2,15 +2,43 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api';
 
+const STATUS_STEPS = ['pending', 'inst_approved', 'approved', 'issued'];
+const STATUS_LABELS = ['Applied', 'Institution\nVerified', 'KSRTC\nApproved', 'Pass\nIssued'];
+
+function StatusPipeline({ status }) {
+  const currentStep = STATUS_STEPS.indexOf(status);
+  return (
+    <div className="pipeline" role="list" aria-label="Application status">
+      {STATUS_LABELS.map((label, i) => {
+        const isCompleted = i < currentStep || (i === currentStep && status === 'issued');
+        const isActive = i === currentStep && status !== 'issued';
+        return (
+          <div key={i} style={{ display: 'contents' }}>
+            <div className="pipeline__step" role="listitem">
+              <div className={`pipeline__dot${isCompleted ? ' pipeline__dot--completed' : isActive ? ' pipeline__dot--active' : ''}`}>
+                {isCompleted ? '✓' : i + 1}
+              </div>
+              <div className={`pipeline__label${isCompleted ? ' pipeline__label--completed' : isActive ? ' pipeline__label--active' : ''}`}>
+                {label}
+              </div>
+            </div>
+            {i < STATUS_LABELS.length - 1 && (
+              <div className={`pipeline__line${isCompleted ? ' pipeline__line--completed' : ''}`} />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function StudentDashboard() {
   const [app, setApp] = useState(null);
   const [credential, setCredential] = useState(null);
   const [loading, setLoading] = useState(true);
   const user = api.getUser();
 
-  useEffect(() => {
-    loadApplication();
-  }, []);
+  useEffect(() => { loadApplication(); }, []);
 
   const loadApplication = async () => {
     try {
@@ -25,113 +53,119 @@ export default function StudentDashboard() {
   };
 
   if (loading) {
-    return <div className="loading-page"><div className="spinner"></div>Loading...</div>;
+    return <div className="loading-page"><span className="spinner" /> Loading your dashboard…</div>;
   }
 
-  const statusSteps = ['pending', 'inst_approved', 'approved', 'issued'];
-  const statusLabels = ['Applied', 'Institution\nVerified', 'KSRTC\nApproved', 'Pass\nIssued'];
-  const currentStep = app ? statusSteps.indexOf(app.status) : -1;
   const isRejected = app?.status === 'rejected';
 
   return (
     <div className="page">
-      <div className="container" style={{ maxWidth: '800px' }}>
+      <div className="container container--narrow">
         <div className="page-header">
-          <h1 className="page-title">Welcome, {user?.name} 👋</h1>
-          <p className="page-subtitle">Student Concession Application Dashboard</p>
+          <div className="page-header__eyebrow">Student Portal</div>
+          <h1 className="page-header__title">Welcome, {user?.name}</h1>
+          <p className="page-header__subtitle">Student Concession Application Dashboard</p>
         </div>
 
+        {/* No application yet */}
         {!app && (
-          <div className="empty-state">
-            <div className="empty-state-icon">📝</div>
-            <div className="empty-state-title">No Application Found</div>
-            <div className="empty-state-description">
-              You haven't submitted a concession application yet.
+          <div className="card">
+            <div className="empty-state">
+              <div className="empty-state__icon">📋</div>
+              <div className="empty-state__title">No Application Found</div>
+              <div className="empty-state__desc">You have not submitted a concession application yet.</div>
+              <Link to="/register/student" className="btn btn--primary" style={{ marginTop: '1rem' }}>
+                Apply for Concession Pass
+              </Link>
             </div>
-            <Link to="/register/student" className="btn btn-primary" style={{ marginTop: '1rem' }}>
-              Apply Now
-            </Link>
           </div>
         )}
 
         {app && (
           <>
-            {/* Status Pipeline */}
-            <div className="card" style={{ marginBottom: '1.5rem' }}>
-              <div className="card-header">
-                <div className="card-title">Application Status</div>
+            {/* Application Status */}
+            <div className="card" style={{ marginBottom: '1rem' }}>
+              <div className="card__header">
+                <div className="card__title">Application Status</div>
                 {isRejected ? (
-                  <span className="badge badge-rejected">Rejected</span>
+                  <span className="badge badge--rejected">Rejected</span>
                 ) : (
-                  <span className={`badge badge-${app.status === 'issued' ? 'issued' : app.status === 'inst_approved' ? 'approved' : 'pending'}`}>
-                    {app.status.replace('_', ' ')}
+                  <span className={`badge badge--${app.status === 'issued' ? 'active' : app.status === 'inst_approved' ? 'approved' : 'pending'}`}>
+                    {app.status === 'issued' ? 'Pass Issued' :
+                     app.status === 'inst_approved' ? 'Institution Approved' :
+                     app.status === 'pending' ? 'Pending Review' : app.status}
                   </span>
                 )}
               </div>
 
-              {!isRejected && (
-                <div className="pipeline">
-                  {statusLabels.map((label, i) => (
-                    <div key={i} style={{ display: 'contents' }}>
-                      <div className="pipeline-step">
-                        <div className={`pipeline-dot ${
-                          i < currentStep ? 'completed' :
-                          i === currentStep ? (app.status === 'issued' ? 'completed' : 'active') : ''
-                        }`}>
-                          {i < currentStep || (i === currentStep && app.status === 'issued') ? '✓' : i + 1}
-                        </div>
-                        <div className="pipeline-label">{label}</div>
-                      </div>
-                      {i < statusLabels.length - 1 && (
-                        <div className={`pipeline-line ${i < currentStep ? 'completed' : ''}`}></div>
-                      )}
-                    </div>
-                  ))}
+              {!isRejected && <StatusPipeline status={app.status} />}
+
+              {isRejected && (
+                <div className="alert alert--error" style={{ marginTop: '0.75rem' }}>
+                  Your application was rejected.{' '}
+                  {app.rejection_reason && <><strong>Reason:</strong> {app.rejection_reason}</>}
+                  <div style={{ marginTop: '0.5rem' }}>
+                    <Link to="/register/student" className="btn btn--sm btn--outline">Re-apply</Link>
+                  </div>
                 </div>
               )}
 
-              {isRejected && (
-                <div className="alert alert-error" style={{ marginTop: '1rem' }}>
-                  ⚠️ Your application was rejected. Reason: {app.rejection_reason || 'Not specified'}
-                </div>
+              {app.status === 'pending' && (
+                <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginTop: '0.75rem', margin: '0.75rem 0 0' }}>
+                  Your application is pending review by your institution.
+                </p>
+              )}
+              {app.status === 'inst_approved' && (
+                <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', margin: '0.75rem 0 0' }}>
+                  Your institution has approved your application. Awaiting final KSRTC approval and pass issuance.
+                </p>
               )}
             </div>
 
+            {/* View Pass */}
+            {app.status === 'issued' && credential && (
+              <div className="card" style={{ marginBottom: '1rem', textAlign: 'center', padding: '1.5rem' }}>
+                <div style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}>🎫</div>
+                <div style={{ fontWeight: 700, marginBottom: '0.375rem', color: 'var(--text)' }}>
+                  Your Digital Pass is Ready
+                </div>
+                <p style={{ fontSize: '0.875rem', marginBottom: '1rem' }}>
+                  Show the QR code to the conductor for bus boarding.
+                </p>
+                <Link to="/student/pass" className="btn btn--success btn--lg" id="view-pass-btn">
+                  View Digital Pass & QR Code
+                </Link>
+              </div>
+            )}
+
             {/* Application Details */}
-            <div className="card" style={{ marginBottom: '1.5rem' }}>
-              <div className="card-header">
-                <div className="card-title">Application Details</div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
-                  ID: #{app.id}
+            <div className="card">
+              <div className="card__header">
+                <div className="card__title">Application Details</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                  #{app.id}
                 </div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', fontSize: '0.9rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', fontSize: '0.875rem' }}>
                 {[
                   ['Roll No', app.roll_no],
                   ['Course', app.course],
                   ['Institution', app.institution_name],
                   ['District', app.institution_district || app.district],
                   ['Route', `${app.route_from} → ${app.route_to}`],
-                  ['Distance', `${app.distance_km} km`],
+                  ['Distance', app.distance_km ? `${app.distance_km} km` : '—'],
                   ['Academic Year', app.academic_year],
-                  ['Applied', new Date(app.created_at).toLocaleDateString()],
+                  ['Applied On', new Date(app.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })],
                 ].map(([label, value]) => (
                   <div key={label}>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
-                    <div style={{ fontWeight: 600, marginTop: '0.15rem' }}>{value || '—'}</div>
+                    <div style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>
+                      {label}
+                    </div>
+                    <div style={{ fontWeight: 600, color: 'var(--text)' }}>{value || '—'}</div>
                   </div>
                 ))}
               </div>
             </div>
-
-            {/* View Pass Button */}
-            {app.status === 'issued' && credential && (
-              <div style={{ textAlign: 'center' }}>
-                <Link to="/student/pass" className="btn btn-success btn-lg">
-                  📱 View Digital Pass & QR Code
-                </Link>
-              </div>
-            )}
           </>
         )}
       </div>

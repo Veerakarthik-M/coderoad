@@ -1,10 +1,23 @@
 // Seed script — creates demo data for presentation
-import { getDb, execute, queryOne, saveDb } from './db.js';
+// Idempotent: safe to run multiple times, uses INSERT OR IGNORE
+import { getDb, execute, queryOne, queryAll, saveDb } from './db.js';
 import bcrypt from 'bcryptjs';
 import { signCredential } from './crypto/sign.js';
 
-async function seed() {
+export async function seedIfEmpty() {
   await getDb();
+  
+  // Check if already seeded
+  const userCount = queryOne('SELECT COUNT(*) as count FROM users');
+  if (userCount && userCount.count > 0) {
+    console.log('📦 Database already has data, skipping seed.');
+    return;
+  }
+
+  await runSeed();
+}
+
+async function runSeed() {
   console.log('🌱 Seeding demo data...\n');
 
   const hash = await bcrypt.hash('demo123', 10);
@@ -63,7 +76,7 @@ async function seed() {
   }
   console.log('✅ Institution 2: admin@gec.ac.in / demo123');
 
-  // 5. Create demo student
+  // 5. Create demo student — Karthik M V
   const studentUserId = execute(
     "INSERT OR IGNORE INTO users (role, email, username, password_hash, name, phone) VALUES (?, ?, ?, ?, ?, ?)",
     ['student', 'karthik@student.com', 'karthik_mv', hash, 'Karthik M V', '9876543213']
@@ -72,26 +85,27 @@ async function seed() {
 
   // 6. Create a student application (already issued — for demo)
   const existingApp = queryOne("SELECT id FROM applications WHERE student_user_id = ?", [studentUserId]);
+  let credentialId;
   if (!existingApp) {
     const appId = execute(
       `INSERT INTO applications (
         student_user_id, institution_id, status,
         date_of_birth, age, gender, guardian_name,
         aadhaar_number, address, place, postal_name, pincode, district,
-        roll_no, course, academic_year,
-        route_from, route_to, distance_km
-      ) VALUES (?, ?, 'issued', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        roll_no, course, department, year_of_study, semester, academic_year,
+        route_from, route_to, distance_km, concession_category
+      ) VALUES (?, ?, 'issued', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         studentUserId, instId,
         '2004-05-15', 22, 'Male', 'Mohan V',
         '1234-5678-9012', '42, MG Road', 'Ettimadai', 'Ettimadai', '641112', 'Coimbatore',
-        '21CS045', 'B.Tech Computer Science', '2026-27',
-        'Ettimadai', 'Coimbatore', 18
+        '21CS045', 'B.Tech Computer Science', 'Computer Science & Engineering', '3rd Year', 'S6', '2026-27',
+        'Ettimadai', 'Coimbatore', 18, 'General'
       ]
     );
 
     // Create signed credential for the demo student
-    const credentialId = `ANV-2026-${String(appId).padStart(6, '0')}`;
+    credentialId = `ANV-2026-${String(appId).padStart(6, '0')}`;
     const now = new Date();
     const validFrom = now.toISOString().split('T')[0];
     const validTo = '2027-03-31';
@@ -101,7 +115,11 @@ async function seed() {
       sid: '21CS045',
       name: 'Karthik M V',
       inst: 'Amrita Vishwa Vidyapeetham',
+      instId: instId,
+      uid: studentUserId,
       route: 'Ettimadai → Coimbatore',
+      from_stop: 'Ettimadai',
+      to_stop: 'Coimbatore',
       km: 18,
       type: 'Student Concession',
       from: validFrom,
@@ -118,9 +136,42 @@ async function seed() {
       [appId, credentialId, jwsToken, validFrom, validTo]
     );
     console.log(`✅ Credential issued: ${credentialId}`);
+
+    // 7. Seed some demo verification events for travel history
+    const conductorUser = queryOne("SELECT id FROM users WHERE email = 'conductor@ksrtc.com'");
+    const conductorId = conductorUser?.id || null;
+
+    const demoEvents = [
+      { daysAgo: 0, time: '08:42', mode: 'ONLINE', result: 'VALID' },
+      { daysAgo: 1, time: '08:38', mode: 'OFFLINE', result: 'VALID' },
+      { daysAgo: 2, time: '08:45', mode: 'ONLINE', result: 'VALID' },
+      { daysAgo: 3, time: '08:40', mode: 'ONLINE', result: 'VALID' },
+      { daysAgo: 5, time: '08:51', mode: 'OFFLINE', result: 'VALID' },
+    ];
+
+    for (const ev of demoEvents) {
+      const evDate = new Date();
+      evDate.setDate(evDate.getDate() - ev.daysAgo);
+      const dateStr = evDate.toISOString().split('T')[0];
+      const verifiedAt = `${dateStr}T${ev.time}:00.000Z`;
+
+      execute(
+        `INSERT INTO verification_events (
+          credential_id, student_name, institution_name, institution_id, student_user_id,
+          route_from, route_to, pass_id, conductor_id, conductor_name,
+          verification_mode, verification_result, verified_at, device_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          credentialId, 'Karthik M V', 'Amrita Vishwa Vidyapeetham', instId, studentUserId,
+          'Ettimadai', 'Coimbatore', credentialId, conductorId, 'Rajesh Kumar',
+          ev.mode, ev.result, verifiedAt, 'DEVICE-CON-001'
+        ]
+      );
+    }
+    console.log('✅ Demo verification events created');
   }
 
-  // 7. Create a second student with pending application
+  // 8. Create a second student with pending application
   const studentUserId2 = execute(
     "INSERT OR IGNORE INTO users (role, email, username, password_hash, name, phone) VALUES (?, ?, ?, ?, ?, ?)",
     ['student', 'anjali@student.com', 'anjali_s', hash, 'Anjali S', '9876543214']
@@ -133,14 +184,14 @@ async function seed() {
         student_user_id, institution_id, status,
         date_of_birth, age, gender, guardian_name,
         aadhaar_number, address, place, postal_name, pincode, district,
-        roll_no, course, academic_year,
+        roll_no, course, department, year_of_study, semester, academic_year,
         route_from, route_to, distance_km
-      ) VALUES (?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         studentUserId2, instId,
         '2005-08-22', 21, 'Female', 'Suresh S',
         '9876-5432-1098', '15, Temple Street', 'Palghat', 'Palghat', '678001', 'Palakkad',
-        '22EC012', 'B.Tech Electronics', '2026-27',
+        '22EC012', 'B.Tech Electronics', 'Electronics & Communication', '2nd Year', 'S4', '2026-27',
         'Palghat', 'Coimbatore', 55
       ]
     );
@@ -149,6 +200,11 @@ async function seed() {
 
   saveDb();
   console.log('\n🎉 Seed complete! All demo accounts use password: demo123');
+  console.log('   admin@ksrtc.com | admin@amrita.edu | admin@gec.ac.in');
+  console.log('   karthik@student.com | anjali@student.com | conductor@ksrtc.com');
 }
 
-seed().catch(console.error);
+// Direct run support: node seed.js
+if (process.argv[1].endsWith('seed.js')) {
+  runSeed().catch(console.error);
+}

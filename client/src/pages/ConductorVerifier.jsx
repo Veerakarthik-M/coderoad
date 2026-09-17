@@ -1,405 +1,457 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Html5Qrcode } from 'html5-qrcode';
-import { 
-  verifyCredentialOffline, 
-  cachePublicKey, 
-  getCachedPublicKey, 
-  cacheRevocations, 
+import { useNavigate } from 'react-router-dom';
+import { Html5QrcodeScanner, Html5QrcodeScanType } from 'html5-qrcode';
+import { api } from '../api';
+import {
+  verifyCredentialOffline,
+  cachePublicKey,
+  getCachedPublicKey,
+  cacheRevocations,
   getCachedRevocations,
-  getLastSyncTime 
+  getLastSyncTime,
 } from '../crypto/verify';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+// --- Offline event queue stored in localStorage ---
+const QUEUE_KEY = 'anavandi_offline_queue';
 
+function getQueue() {
+  try { return JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]'); }
+  catch { return []; }
+}
+
+function saveQueue(q) {
+  localStorage.setItem(QUEUE_KEY, JSON.stringify(q));
+}
+
+function addToQueue(event) {
+  const q = getQueue();
+  q.push({ ...event, localId: `local-${Date.now()}-${Math.random().toString(36).slice(2)}` });
+  saveQueue(q);
+}
+
+function fmtTime(iso) {
+  if (!iso) return '';
+  return new Date(iso).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+}
+
+function fmtDateTime(iso) {
+  if (!iso) return '';
+  return new Date(iso).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true });
+}
+
+// --- Network Status Hook ---
+function useNetworkStatus() {
+  const [online, setOnline] = useState(navigator.onLine);
+  useEffect(() => {
+    const onOnline = () => setOnline(true);
+    const onOffline = () => setOnline(false);
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onOffline);
+    return () => { window.removeEventListener('online', onOnline); window.removeEventListener('offline', onOffline); };
+  }, []);
+  return online;
+}
+
+// --- Status Result Display ---
+function VerificationResultCard({ result, onScanAgain }) {
+  const statusConfig = {
+    VALID: { emoji: '✅', label: 'PASS VALID', cls: 'valid' },
+    TAMPERED: { emoji: '🚫', label: 'TAMPERED / INVALID', cls: 'invalid' },
+    EXPIRED: { emoji: '⏰', label: 'PASS EXPIRED', cls: 'expired' },
+    REVOKED: { emoji: '❌', label: 'PASS REVOKED', cls: 'invalid' },
+    ERROR: { emoji: '⚠️', label: 'ERROR', cls: 'invalid' },
+  };
+  const { emoji, label, cls } = statusConfig[result.status] || statusConfig.ERROR;
+  const p = result.payload;
+
+  return (
+    <div className={`verification-result verification-result--${cls}`}>
+      <div className="verification-result__icon">{emoji}</div>
+      <div className={`verification-result__status verification-result__status--${cls}`}>{label}</div>
+
+      {p && (
+        <div className="verification-result__fields">
+          {[
+            ['Student', p.name],
+            ['Roll No', p.sid],
+            ['Institution', p.inst],
+            ['Route', p.route],
+            ['Valid Until', p.to],
+            ['Pass ID', p.cid],
+          ].filter(([, v]) => v).map(([label, value]) => (
+            <div key={label} className="verification-result__row">
+              <span className="verification-result__label">{label}</span>
+              <span className="verification-result__value">{value}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {result.message && !p && (
+        <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)', textAlign: 'center', padding: '0.5rem 0' }}>
+          {result.message}
+        </div>
+      )}
+
+      <div className="verification-result__mode">
+        <span>{result.verifiedAt ? fmtDateTime(result.verifiedAt) : ''}</span>
+        <div style={{ display: 'flex', gap: '0.375rem' }}>
+          <span className={`badge badge--${result.mode === 'OFFLINE' ? 'offline' : 'online'}`}>{result.mode}</span>
+          <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{result.verificationTimeMs}ms</span>
+        </div>
+      </div>
+
+      <button
+        className="btn btn--outline btn--full"
+        style={{ marginTop: '0.875rem' }}
+        onClick={onScanAgain}
+        id="scan-again-btn"
+      >
+        Scan Next Pass
+      </button>
+    </div>
+  );
+}
+
+// --- Sync Queue Panel ---
+function SyncQueuePanel({ queue, online, onSync, syncing }) {
+  if (queue.length === 0) return null;
+
+  return (
+    <div className="sync-queue">
+      <div className="sync-queue__header">
+        <span>
+          📤 Pending Sync
+          <span style={{
+            marginLeft: '0.375rem',
+            background: 'var(--warning)',
+            color: '#fff',
+            borderRadius: 'var(--radius-full)',
+            padding: '0.05rem 0.4rem',
+            fontSize: '0.7rem',
+            fontWeight: 800,
+          }}>{queue.length}</span>
+        </span>
+        {online && (
+          <button
+            className="btn btn--primary btn--sm"
+            onClick={onSync}
+            disabled={syncing}
+            id="sync-now-btn"
+          >
+            {syncing ? <><span className="spinner" /> Syncing…</> : 'Sync Now'}
+          </button>
+        )}
+      </div>
+      {queue.slice(0, 5).map(ev => (
+        <div key={ev.localId} className="sync-queue__item">
+          <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
+            {ev.studentName || ev.credentialId} · {fmtDateTime(ev.verifiedAt)}
+          </span>
+          <span className="badge badge--offline">OFFLINE</span>
+        </div>
+      ))}
+      {queue.length > 5 && (
+        <div style={{ padding: '0.5rem 1rem', fontSize: '0.75rem', color: 'var(--text-muted)', borderTop: '1px solid var(--border)' }}>
+          +{queue.length - 5} more events pending
+        </div>
+      )}
+      {!online && (
+        <div style={{ padding: '0.5rem 1rem', fontSize: '0.75rem', color: 'var(--text-muted)', borderTop: '1px solid var(--border)' }}>
+          Will sync automatically when back online
+        </div>
+      )}
+    </div>
+  );
+}
+
+// --- QR Scanner Component using html5-qrcode ---
+function QRScannerView({ onScan, onCancel, onError }) {
+  const containerRef = useRef(null);
+  const scannerRef = useRef(null);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const scanner = new Html5QrcodeScanner(
+      'qr-reader',
+      {
+        fps: 10,
+        qrbox: { width: 220, height: 220 },
+        rememberLastUsedCamera: true,
+        supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA],
+        showTorchButtonIfSupported: true,
+      },
+      false
+    );
+
+    scanner.render(
+      (decodedText) => { onScan(decodedText); scanner.clear().catch(() => {}); },
+      (error) => { /* ignore per-frame errors */ }
+    );
+
+    scannerRef.current = scanner;
+
+    return () => {
+      scanner.clear().catch(() => {});
+    };
+  }, []);
+
+  return (
+    <div>
+      <div id="qr-reader" style={{ width: '100%', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }} />
+      <button
+        className="btn btn--outline btn--full"
+        style={{ marginTop: '0.75rem' }}
+        onClick={onCancel}
+        id="cancel-scan-btn"
+      >
+        Cancel
+      </button>
+    </div>
+  );
+}
+
+// --- Main Conductor App ---
 export default function ConductorVerifier() {
+  const navigate = useNavigate();
+  const user = api.getUser();
+  const online = useNetworkStatus();
+
   const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState(null);
-  const [history, setHistory] = useState([]);
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [lastSync, setLastSync] = useState(getLastSyncTime());
-  const [hasPublicKey, setHasPublicKey] = useState(!!getCachedPublicKey());
+  const [queue, setQueue] = useState(getQueue);
   const [syncing, setSyncing] = useState(false);
-  const [scannerError, setScannerError] = useState('');
-  const scannerRef = useRef(null);
-  const scannerInstanceRef = useRef(null);
+  const [lastSync, setLastSync] = useState(getLastSyncTime());
+  const [scanHistory, setScanHistory] = useState([]);
+  const [syncStatus, setSyncStatus] = useState(null);
+  const [cameraError, setCameraError] = useState(null);
+  const syncAttempted = useRef(false);
 
-  // Track online/offline status
+  // Redirect to login if not logged in or not a conductor
   useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
-
-  // Auto-sync when coming online
-  useEffect(() => {
-    if (isOnline && !hasPublicKey) {
-      syncData();
+    if (!user) {
+      navigate('/login');
+      return;
     }
-  }, [isOnline]);
-
-  // Initial sync
-  useEffect(() => {
-    if (isOnline) {
-      syncData();
+    if (user.role !== 'conductor') {
+      navigate('/');
     }
-  }, []);
+  }, [user, navigate]);
 
-  // Cleanup scanner on unmount
+  // Sync when online: fetch public key + revocation list
   useEffect(() => {
-    return () => {
-      stopScanner();
-    };
-  }, []);
+    if (online && !syncAttempted.current) {
+      syncAttempted.current = true;
+      syncPublicData();
+    }
+  }, [online]);
 
-  const syncData = async () => {
+  // Auto-sync offline queue when we come back online
+  useEffect(() => {
+    if (online && queue.length > 0) {
+      syncOfflineQueue();
+    }
+  }, [online]);
+
+  const syncPublicData = async () => {
+    try {
+      const [jwk, revData] = await Promise.all([
+        api.get('/verify/public-key'),
+        api.get('/verify/revocations'),
+      ]);
+      cachePublicKey(jwk);
+      cacheRevocations(revData.revocations || []);
+      setLastSync(new Date().toISOString());
+      setSyncStatus('synced');
+    } catch (err) {
+      console.warn('Sync failed:', err.message);
+      setSyncStatus('failed');
+    }
+  };
+
+  const syncOfflineQueue = async () => {
+    const q = getQueue();
+    if (q.length === 0) return;
     setSyncing(true);
     try {
-      // Fetch public key
-      const res = await fetch(`${API_BASE}/verify/public-key`);
-      const jwk = await res.json();
-      cachePublicKey(jwk);
-      setHasPublicKey(true);
-
-      // Fetch revocation list
-      const revRes = await fetch(`${API_BASE}/verify/revocations`);
-      const revData = await revRes.json();
-      cacheRevocations(revData.revocations);
-      setLastSync(new Date().toISOString());
+      const res = await api.post('/verify/events/batch', { events: q });
+      const failed = (res.results || []).filter(r => r.status === 'failed').map(r => r.localId);
+      const newQ = q.filter(ev => failed.includes(ev.localId));
+      saveQueue(newQ);
+      setQueue(newQ);
+      setSyncStatus(`synced ${res.synced || q.length} events`);
     } catch (err) {
-      console.error('Sync failed:', err);
+      console.warn('Batch sync failed:', err.message);
     } finally {
       setSyncing(false);
     }
   };
 
-  const startScanner = async () => {
-    setScannerError('');
-    setResult(null);
-    
-    try {
-      const scanner = new Html5Qrcode('qr-reader');
-      scannerInstanceRef.current = scanner;
-      
-      await scanner.start(
-        { facingMode: 'environment' },
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 250 },
-          aspectRatio: 1.0
-        },
-        async (decodedText) => {
-          // QR code detected — stop scanner and verify
-          await scanner.stop();
-          scannerInstanceRef.current = null;
-          setScanning(false);
-          handleScan(decodedText);
-        },
-        () => {} // ignore scan errors
-      );
-      
-      setScanning(true);
-    } catch (err) {
-      console.error('Scanner start error:', err);
-      setScannerError(
-        err.toString().includes('Permission') 
-          ? 'Camera permission denied. Please allow camera access.'
-          : 'Could not start camera. Make sure no other app is using it.'
-      );
-    }
-  };
-
-  const stopScanner = async () => {
-    if (scannerInstanceRef.current) {
-      try {
-        await scannerInstanceRef.current.stop();
-      } catch (e) {
-        // Already stopped
-      }
-      scannerInstanceRef.current = null;
-    }
+  const handleScan = useCallback(async (qrData) => {
+    if (!qrData) return;
     setScanning(false);
-  };
 
-  const handleScan = async (qrData) => {
-    const verification = await verifyCredentialOffline(qrData);
-    setResult(verification);
+    const verifyResult = await verifyCredentialOffline(qrData);
+    setResult(verifyResult);
 
-    // Add to history
-    setHistory(prev => [{
-      ...verification,
-      id: Date.now(),
-      name: verification.payload?.name || 'Unknown',
-    }, ...prev].slice(0, 20));
-  };
+    // Build event object
+    const event = {
+      credentialId: verifyResult.payload?.cid || 'UNKNOWN',
+      studentName: verifyResult.payload?.name || null,
+      institutionName: verifyResult.payload?.inst || null,
+      institutionId: verifyResult.payload?.instId || null,
+      studentUserId: verifyResult.payload?.uid || null,
+      routeFrom: verifyResult.payload?.from_stop || verifyResult.payload?.route?.split(' → ')[0] || null,
+      routeTo: verifyResult.payload?.to_stop || verifyResult.payload?.route?.split(' → ')[1] || null,
+      passId: verifyResult.payload?.cid || null,
+      conductorId: user?.id || null,
+      conductorName: user?.name || null,
+      verificationMode: online ? 'ONLINE' : 'OFFLINE',
+      verificationResult: verifyResult.status === 'VALID' ? 'VALID' :
+                          verifyResult.status === 'EXPIRED' ? 'EXPIRED' :
+                          verifyResult.status === 'REVOKED' ? 'REVOKED' : 'INVALID',
+      verifiedAt: verifyResult.verifiedAt,
+      deviceId: 'WEB-CONDUCTOR',
+    };
 
-  // Demo: test with a tampered QR
-  const testTampered = async () => {
+    // Add to scan history
+    setScanHistory(prev => [{ ...event, mode: online ? 'ONLINE' : 'OFFLINE', status: verifyResult.status }, ...prev.slice(0, 9)]);
+
+    if (online) {
+      // Post directly
+      try {
+        await api.post('/verify/event', event);
+      } catch {
+        // If online post fails, fallback to queue
+        addToQueue(event);
+        setQueue(getQueue());
+      }
+    } else {
+      // Queue for later
+      addToQueue(event);
+      setQueue(getQueue());
+    }
+  }, [online, user]);
+
+  const handleScanReset = () => {
     setResult(null);
-    // Create a fake JWS with garbage signature
-    const fakeJws = 'eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJjaWQiOiJBTlYtMjAyNi0wMDAwMDEiLCJuYW1lIjoiRmFrZSBVc2VyIiwidG8iOiIyMDI3LTAzLTMxIn0.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
-    const verification = await verifyCredentialOffline(fakeJws);
-    setResult(verification);
-    setHistory(prev => [{
-      ...verification,
-      id: Date.now(),
-      name: 'Tampered Test',
-    }, ...prev].slice(0, 20));
+    setCameraError(null);
+    setScanning(true);
   };
 
-  // Demo: test with an expired credential
-  const testExpired = async () => {
-    setResult(null);
-    // Manually create an expired but correctly formatted token for demo
-    // In practice this would come from scanning an old QR
-    const fakeJws = 'eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJjaWQiOiJBTlYtMjAyNS0wMDAwMDEiLCJuYW1lIjoiRXhwaXJlZCBVc2VyIiwidG8iOiIyMDI1LTAxLTAxIn0.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
-    const verification = await verifyCredentialOffline(fakeJws);
-    setResult(verification);
-    setHistory(prev => [{
-      ...verification,
-      id: Date.now(),
-      name: 'Expired Test',
-    }, ...prev].slice(0, 20));
-  };
+  const hasPublicKey = !!getCachedPublicKey();
 
-  const formatTime = (isoString) => {
-    if (!isoString) return 'Never';
-    const date = new Date(isoString);
-    const now = new Date();
-    const diff = Math.floor((now - date) / 1000);
-    if (diff < 60) return `${diff}s ago`;
-    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-    return date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-  };
+  if (!user || user.role !== 'conductor') return null;
 
   return (
-    <div style={{ 
-      minHeight: '100vh', 
-      background: 'var(--color-bg)',
-      display: 'flex',
-      flexDirection: 'column'
-    }}>
+    <div className="conductor-app">
       {/* Header */}
-      <div style={{ 
-        padding: '1rem 1.5rem',
-        background: 'rgba(10, 15, 28, 0.95)',
-        borderBottom: '1px solid var(--color-border)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between'
-      }}>
+      <div className="conductor-header">
         <div>
-          <div style={{ fontSize: '1.1rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            🔒 KSRTC Concession Verifier
-          </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.15rem' }}>
-            Offline-First Cryptographic Verification
-          </div>
+          <div className="conductor-header__brand">🚌 ANAVANDI Conductor</div>
+          <div className="conductor-header__meta">{user.name} · KSRTC</div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <button 
-            onClick={syncData} 
-            className="btn btn-ghost btn-sm"
-            disabled={!isOnline || syncing}
-          >
-            {syncing ? '⟳' : '🔄'} Sync
-          </button>
-          <a href="/" className="btn btn-ghost btn-sm">← Back</a>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+          {/* Sync indicator */}
+          {lastSync && (
+            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textAlign: 'right' }}>
+              Synced<br />{fmtDateTime(lastSync)}
+            </div>
+          )}
+          <div className={`network-status network-status--${online ? 'online' : 'offline'}`}>
+            <div className={`network-dot network-dot--${online ? 'online' : 'offline'}`} />
+            {online ? 'Online' : 'Offline'}
+          </div>
         </div>
       </div>
 
-      <div style={{ flex: 1, padding: '1rem 1.5rem', maxWidth: '500px', margin: '0 auto', width: '100%' }}>
-        
-        {/* Status Bar */}
-        <div className="scanner-status" style={{ marginBottom: '1rem' }}>
-          <div className="network-indicator">
-            <div className={`network-dot ${isOnline ? 'online' : 'offline'}`}></div>
-            <span style={{ color: isOnline ? 'var(--color-success)' : 'var(--color-warning)' }}>
-              {isOnline ? 'ONLINE' : 'OFFLINE'}
-            </span>
-          </div>
-          <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
-            {hasPublicKey ? '🔑 Key cached' : '⚠️ No key'} · Sync: {formatTime(lastSync)}
-          </div>
-        </div>
-
+      <div className="conductor-body">
+        {/* No public key warning */}
         {!hasPublicKey && (
-          <div className="alert alert-warning" style={{ marginBottom: '1rem' }}>
-            ⚠️ Public key not cached. Connect to internet and tap Sync to enable offline verification.
+          <div className="alert alert--warning">
+            ⚠️ Not synced yet. Connect to internet to download the verification key before scanning offline.
           </div>
         )}
 
-        {/* Scanner or Result */}
-        {!result ? (
-          <div>
-            <div className="scanner-viewfinder" style={{ marginBottom: '1rem' }}>
-              <div id="qr-reader" style={{ width: '100%' }}></div>
-              {!scanning && (
-                <div style={{ 
-                  position: 'absolute', inset: 0, 
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  flexDirection: 'column', gap: '1rem',
-                  background: 'rgba(0,0,0,0.8)',
-                  color: 'var(--color-text-secondary)',
-                  fontSize: '0.9rem'
-                }}>
-                  <div style={{ fontSize: '3rem' }}>📷</div>
-                  <div>Tap to start scanning</div>
-                </div>
-              )}
-              {scanning && (
-                <div className="scanner-overlay">
-                  <div className="scanner-line"></div>
-                </div>
-              )}
-            </div>
+        {/* Offline queue */}
+        <SyncQueuePanel
+          queue={queue}
+          online={online}
+          onSync={syncOfflineQueue}
+          syncing={syncing}
+        />
 
-            {scannerError && (
-              <div className="alert alert-error" style={{ marginBottom: '1rem' }}>
-                {scannerError}
-              </div>
-            )}
-
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              {!scanning ? (
-                <button 
-                  onClick={startScanner} 
-                  className="btn btn-primary btn-lg btn-full"
-                  disabled={!hasPublicKey}
-                >
-                  📷 Start Scanning
-                </button>
-              ) : (
-                <button onClick={stopScanner} className="btn btn-danger btn-lg btn-full">
-                  ⏹ Stop Scanner
-                </button>
-              )}
-            </div>
-
-            {/* Demo Buttons */}
-            <div style={{ marginTop: '1rem' }}>
-              <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600, marginBottom: '0.5rem' }}>
-                Demo Tests
-              </div>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button onClick={testTampered} className="btn btn-outline btn-sm" style={{ flex: 1 }}>
-                  🔴 Test Tampered
-                </button>
-                <button onClick={testExpired} className="btn btn-outline btn-sm" style={{ flex: 1 }}>
-                  🟡 Test Expired
-                </button>
-              </div>
-            </div>
-          </div>
+        {/* Scanner / Result */}
+        {result ? (
+          <VerificationResultCard result={result} onScanAgain={handleScanReset} />
+        ) : scanning ? (
+          <QRScannerView
+            onScan={handleScan}
+            onCancel={() => setScanning(false)}
+            onError={(err) => setCameraError(err)}
+          />
         ) : (
-          <div>
-            {/* Verification Result */}
-            <div className={`verification-result ${
-              result.status === 'VALID' ? 'valid' : 
-              result.status === 'EXPIRED' ? 'expired' : 'invalid'
-            }`}>
-              <div className="verification-icon">
-                {result.status === 'VALID' ? '✅' : 
-                 result.status === 'EXPIRED' ? '⏰' :
-                 result.status === 'REVOKED' ? '🚫' : '❌'}
-              </div>
-              <div className="verification-status" style={{ 
-                color: result.status === 'VALID' ? 'var(--color-success)' : 
-                       result.status === 'EXPIRED' ? 'var(--color-warning)' : 'var(--color-danger)'
-              }}>
-                {result.status === 'VALID' ? '✓ VALID PASS' :
-                 result.status === 'EXPIRED' ? '✕ EXPIRED' :
-                 result.status === 'REVOKED' ? '✕ REVOKED' : '✕ INVALID'}
-              </div>
-
-              {result.payload && (
-                <div className="verification-details">
-                  <div className="verification-row">
-                    <span className="verification-label">Name</span>
-                    <span className="verification-value">{result.payload.name}</span>
-                  </div>
-                  <div className="verification-row">
-                    <span className="verification-label">Roll No</span>
-                    <span className="verification-value">{result.payload.sid}</span>
-                  </div>
-                  <div className="verification-row">
-                    <span className="verification-label">Institution</span>
-                    <span className="verification-value">{result.payload.inst}</span>
-                  </div>
-                  <div className="verification-row">
-                    <span className="verification-label">Route</span>
-                    <span className="verification-value">{result.payload.route}</span>
-                  </div>
-                  <div className="verification-row">
-                    <span className="verification-label">Type</span>
-                    <span className="verification-value">{result.payload.type}</span>
-                  </div>
-                  <div className="verification-row">
-                    <span className="verification-label">Valid Until</span>
-                    <span className="verification-value" style={{
-                      color: result.status === 'EXPIRED' ? 'var(--color-danger)' : 'var(--color-success)'
-                    }}>
-                      {result.payload.to}
-                    </span>
-                  </div>
-                  <div className="verification-row">
-                    <span className="verification-label">Credential</span>
-                    <span className="verification-value" style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>
-                      {result.payload.cid}
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {result.message && !result.payload && (
-                <div style={{ fontSize: '0.9rem', color: 'var(--color-text-secondary)', marginTop: '0.5rem' }}>
-                  {result.message}
-                </div>
-              )}
-
-              <div className="verification-time">
-                Verified: <span>{result.mode}</span> · Time: <span>{result.verificationTimeMs}ms</span>
-                {result.verificationTimeMs && (
-                  <span> ({(result.verificationTimeMs / 1000).toFixed(2)}s)</span>
-                )}
-              </div>
+          <div className="card" style={{ textAlign: 'center', padding: '2rem 1.5rem' }}>
+            <div style={{ fontSize: '3rem', marginBottom: '0.75rem' }}>📷</div>
+            <div style={{ fontWeight: 700, fontSize: '1.125rem', color: 'var(--text)', marginBottom: '0.5rem' }}>
+              Ready to Scan
             </div>
-
-            <button 
-              onClick={() => { setResult(null); }} 
-              className="btn btn-primary btn-lg btn-full" 
-              style={{ marginTop: '1.5rem' }}
+            <p style={{ fontSize: '0.875rem', marginBottom: '1.375rem' }}>
+              Press the button below to open the camera and scan a student's QR code
+            </p>
+            <button
+              className="btn btn--primary btn--lg btn--full"
+              onClick={() => { setCameraError(null); setScanning(true); }}
+              id="start-scan-btn"
+              disabled={!hasPublicKey && !online}
             >
-              📷 Scan Next
+              Open Camera Scanner
             </button>
+            {!hasPublicKey && !online && (
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.625rem' }}>
+                Connect to internet at least once to download the verification key
+              </p>
+            )}
           </div>
         )}
 
         {/* Scan History */}
-        {history.length > 0 && !result && (
-          <div className="scan-history" style={{ marginTop: '1.5rem' }}>
-            <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600, marginBottom: '0.75rem' }}>
-              Recent Verifications
+        {scanHistory.length > 0 && !scanning && (
+          <div>
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
+              Recent Scans
             </div>
-            {history.map(item => (
-              <div key={item.id} className="scan-history-item">
-                <span className="scan-history-icon">
-                  {item.status === 'VALID' ? '✅' : 
-                   item.status === 'EXPIRED' ? '⏰' : '❌'}
-                </span>
-                <div className="scan-history-info">
-                  <div className="scan-history-name">{item.name}</div>
-                  <div className="scan-history-meta">
-                    {item.status} · {item.mode} · {item.verificationTimeMs}ms
+            <div className="scan-history">
+              {scanHistory.map((s, i) => (
+                <div key={i} className="scan-history__item">
+                  <span className="scan-history__status">
+                    {s.status === 'VALID' ? '✅' : s.status === 'EXPIRED' ? '⏰' : '❌'}
+                  </span>
+                  <div style={{ flex: 1 }}>
+                    <div className="scan-history__name">{s.studentName || s.credentialId || 'Unknown'}</div>
+                    <div className="scan-history__meta">
+                      {s.routeFrom && s.routeTo ? `${s.routeFrom} → ${s.routeTo} · ` : ''}
+                      {fmtTime(s.verifiedAt)}
+                    </div>
                   </div>
+                  <span className={`badge badge--${s.mode === 'OFFLINE' ? 'offline' : 'online'}`}>{s.mode}</span>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
+        )}
+
+        {/* Manual Sync Button */}
+        {online && (
+          <button
+            className="btn btn--ghost btn--sm"
+            onClick={syncPublicData}
+            style={{ textAlign: 'center', color: 'var(--text-muted)' }}
+            id="manual-sync-btn"
+          >
+            ↻ Refresh Key & Revocation List
+          </button>
         )}
       </div>
     </div>

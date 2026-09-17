@@ -11,11 +11,11 @@ router.post('/apply', authMiddleware, requireRole('student'), (req, res) => {
     const {
       institutionId, dateOfBirth, age, gender, guardianName,
       aadhaarNumber, address, place, postalName, pincode, district,
-      rollNo, course, academicYear,
-      routeFrom, routeTo, distanceKm
+      rollNo, course, department, yearOfStudy, semester, academicYear,
+      routeFrom, routeTo, distanceKm, concessionCategory
     } = req.body;
 
-    // Check for existing pending application
+    // Check for existing active application
     const existing = queryOne(
       "SELECT id FROM applications WHERE student_user_id = ? AND status NOT IN ('rejected')",
       [req.user.id]
@@ -29,15 +29,15 @@ router.post('/apply', authMiddleware, requireRole('student'), (req, res) => {
         student_user_id, institution_id, status,
         date_of_birth, age, gender, guardian_name,
         aadhaar_number, address, place, postal_name, pincode, district,
-        roll_no, course, academic_year,
-        route_from, route_to, distance_km
-      ) VALUES (?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        roll_no, course, department, year_of_study, semester, academic_year,
+        route_from, route_to, distance_km, concession_category
+      ) VALUES (?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         req.user.id, institutionId,
         dateOfBirth, age, gender, guardianName,
         aadhaarNumber, address, place, postalName, pincode, district,
-        rollNo, course, academicYear,
-        routeFrom, routeTo, distanceKm
+        rollNo, course, department || null, yearOfStudy || null, semester || null, academicYear || null,
+        routeFrom, routeTo, distanceKm, concessionCategory || 'General'
       ]
     );
 
@@ -49,7 +49,7 @@ router.post('/apply', authMiddleware, requireRole('student'), (req, res) => {
   }
 });
 
-// GET /api/student/application — get current student's application
+// GET /api/student/application — get current student's application and credential
 router.get('/application', authMiddleware, requireRole('student'), (req, res) => {
   const app = queryOne(
     `SELECT a.*, i.name as institution_name, i.place as institution_place, i.district as institution_district,
@@ -62,11 +62,8 @@ router.get('/application', authMiddleware, requireRole('student'), (req, res) =>
     [req.user.id]
   );
   
-  if (!app) {
-    return res.json({ application: null });
-  }
+  if (!app) return res.json({ application: null, credential: null });
 
-  // If issued, get the credential too
   let credential = null;
   if (app.status === 'issued') {
     credential = queryOne(
@@ -78,7 +75,7 @@ router.get('/application', authMiddleware, requireRole('student'), (req, res) =>
   res.json({ application: app, credential });
 });
 
-// GET /api/student/pass — get the digital pass data
+// GET /api/student/pass — get the digital pass data for display
 router.get('/pass', authMiddleware, requireRole('student'), (req, res) => {
   const app = queryOne(
     `SELECT a.*, i.name as institution_name, i.place as institution_place,
@@ -91,18 +88,14 @@ router.get('/pass', authMiddleware, requireRole('student'), (req, res) => {
     [req.user.id]
   );
 
-  if (!app) {
-    return res.status(404).json({ error: 'No issued pass found' });
-  }
+  if (!app) return res.status(404).json({ error: 'No issued pass found' });
 
   const credential = queryOne(
     'SELECT * FROM credentials WHERE application_id = ? AND revoked = 0',
     [app.id]
   );
 
-  if (!credential) {
-    return res.status(404).json({ error: 'Credential not found or revoked' });
-  }
+  if (!credential) return res.status(404).json({ error: 'Credential not found or revoked' });
 
   res.json({ 
     pass: {
@@ -110,6 +103,7 @@ router.get('/pass', authMiddleware, requireRole('student'), (req, res) => {
       rollNo: app.roll_no,
       institution: app.institution_name,
       course: app.course,
+      department: app.department,
       routeFrom: app.route_from,
       routeTo: app.route_to,
       distanceKm: app.distance_km,
