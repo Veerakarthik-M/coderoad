@@ -1,175 +1,132 @@
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { api } from '../api';
 
 const WORKFLOW_STEPS = [
-  {
-    step: '01',
-    title: 'Student Registers',
-    desc: 'Complete personal, college, and travel details in a guided step-by-step form.',
-  },
-  {
-    step: '02',
-    title: 'Institution Verifies',
-    desc: 'College administrator reviews and approves the student\'s eligibility and enrollment.',
-  },
-  {
-    step: '03',
-    title: 'Pass Issued',
-    desc: 'KSRTC digitally signs the credential using ECDSA P-256. A QR code is generated.',
-  },
-  {
-    step: '04',
-    title: 'Conductor Scans',
-    desc: 'The conductor scans the student\'s QR. Verified online or offline — under 2 seconds.',
-  },
-  {
-    step: '05',
-    title: 'Event Recorded',
-    desc: 'Each verified scan creates a travel record. Offline events sync automatically when internet returns.',
-  },
-  {
-    step: '06',
-    title: 'Institution Reviews',
-    desc: 'Authorized administrators view their students\' pass status and verification history.',
-  },
+  { step: '01', title: 'Student Registers', desc: 'Complete personal, college, and travel details in a guided step-by-step form.' },
+  { step: '02', title: 'Institution Verifies', desc: 'College administrator reviews and approves the student eligibility and enrollment.' },
+  { step: '03', title: 'Pass Issued', desc: 'KSRTC digitally signs the credential using ECDSA P-256. A QR code is generated.' },
+  { step: '04', title: 'Conductor Scans', desc: 'The conductor scans the student QR. Verified online or offline under 2 seconds.' },
+  { step: '05', title: 'Event Recorded', desc: 'Each verified scan creates a travel record. Offline events sync when internet returns.' },
+  { step: '06', title: 'Institution Reviews', desc: 'Authorized administrators view their students pass status and verification history.' },
 ];
 
-const DEMO_ACCOUNTS = [
-  { role: 'Student', email: 'karthik@student.com', desc: 'Has an active issued pass' },
-  { role: 'Institution Admin', email: 'admin@amrita.edu', desc: 'Amrita Vishwa Vidyapeetham' },
-  { role: 'KSRTC Admin', email: 'admin@ksrtc.com', desc: 'Platform administrator' },
-  { role: 'Conductor', email: 'conductor@ksrtc.com', desc: 'Bus conductor scanner' },
-];
+function HeroLoginPanel({ onAuth }) {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-export default function Landing({ user }) {
+  const redirect = (role) => {
+    switch (role) {
+      case 'student': navigate('/student'); break;
+      case 'institution': navigate('/institution'); break;
+      case 'admin': navigate('/admin'); break;
+      case 'conductor': navigate('/conductor'); break;
+      default: navigate('/');
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      const data = await api.post('/auth/login', { email, password });
+      onAuth(data.user, data.token);
+      redirect(data.user.role);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="hero-login-panel">
+      <div className="hero-login-panel__header">
+        <h2 className="hero-login-panel__title">Sign in KSRTC Concession Application</h2>
+      </div>
+      <div className="hero-login-panel__body">
+        {error && <div className="alert alert--error" style={{ marginBottom: '1rem', fontSize: '0.8rem' }}>{error}</div>}
+        <form onSubmit={handleSubmit} noValidate>
+          <div className="form-group" style={{ marginBottom: '0.75rem' }}>
+            <label className="form-label" style={{ fontSize: '0.8125rem' }}>Student Type</label>
+            <select className="form-input" style={{ fontSize: '0.875rem' }}>
+              <option>College Student</option>
+              <option>School Student</option>
+            </select>
+          </div>
+          <div className="form-group" style={{ marginBottom: '0.75rem' }}>
+            <label className="form-label" htmlFor="hero-email" style={{ fontSize: '0.8125rem' }}>Email / Username</label>
+            <input id="hero-email" type="text" className="form-input" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" style={{ fontSize: '0.875rem' }} required />
+          </div>
+          <div className="form-group" style={{ marginBottom: '0.5rem' }}>
+            <label className="form-label" htmlFor="hero-password" style={{ fontSize: '0.8125rem' }}>Password</label>
+            <input id="hero-password" type="password" className="form-input" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" style={{ fontSize: '0.875rem' }} required />
+          </div>
+          <a href="#" style={{ fontSize: '0.8rem', color: 'var(--blue-600)', display: 'block', marginBottom: '1rem' }}>Forgot password?</a>
+          <button type="submit" className="hero-login-panel__submit" id="hero-signin" disabled={loading}>
+            {loading ? 'Signing in...' : 'SIGN IN'}
+          </button>
+        </form>
+        <p style={{ textAlign: 'center', marginTop: '0.75rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+          New student? <Link to="/register/student" style={{ color: 'var(--blue-600)', fontWeight: '600' }}>Register here</Link>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+export default function Landing({ user, onAuth }) {
   return (
     <main>
-      {/* Hero */}
-      <section className="landing-hero">
-        <div className="container">
-          <div className="landing-hero__eyebrow">
-            <span>Kerala KSRTC</span>
-            <span>·</span>
-            <span>SC-01</span>
-          </div>
-          <h1 className="landing-hero__title">
-            Digital Student Bus Concession Pass for Kerala
-          </h1>
-          <p className="landing-hero__desc">
-            ANAVANDI digitises student bus pass applications, institutional approval, and conductor 
-            verification — including areas with no internet connectivity. Every pass is cryptographically 
-            signed and verifiable offline.
-          </p>
-          <div className="landing-hero__actions">
-            {!user && (
-              <>
-                <Link to="/register/student" className="btn btn--primary btn--lg" id="hero-student-register">
-                  Apply for Concession Pass
-                </Link>
-                <Link to="/login" className="btn btn--outline btn--lg" id="hero-login">
-                  Sign In
-                </Link>
-              </>
-            )}
-            {user?.role === 'student' && (
-              <Link to="/student" className="btn btn--primary btn--lg">Go to Dashboard</Link>
-            )}
-            {user?.role === 'institution' && (
-              <Link to="/institution" className="btn btn--primary btn--lg">Institution Dashboard</Link>
-            )}
-            {user?.role === 'admin' && (
-              <Link to="/admin" className="btn btn--primary btn--lg">Admin Dashboard</Link>
-            )}
-            {user?.role === 'conductor' && (
-              <Link to="/conductor" className="btn btn--success btn--lg">Open Scanner</Link>
-            )}
-            <Link to="/conductor" className="btn btn--outline btn--lg" id="hero-conductor">
-              Conductor Scanner
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* How it works */}
-      <section className="landing-workflow">
-        <div className="container">
-          <h2>How It Works</h2>
-          <p style={{ marginTop: '0.375rem', marginBottom: 0 }}>
-            End-to-end workflow from student registration to verified travel event.
-          </p>
-          <div className="workflow-steps">
-            {WORKFLOW_STEPS.map((s) => (
-              <div key={s.step} className="workflow-step">
-                <div className="workflow-step__number">Step {s.step}</div>
-                <div className="workflow-step__title">{s.title}</div>
-                <p className="workflow-step__desc">{s.desc}</p>
+      <section className="landing-hero" id="home">
+        <img src="/ksrtc-bus.jpg" alt="Kerala KSRTC Bus" className="landing-hero__bg" />
+        <div className="landing-hero__overlay"></div>
+        <div className="container" style={{ position: 'relative', zIndex: 2, paddingTop: '2.5rem', paddingBottom: '2.5rem' }}>
+          <div className="landing-hero__two-col">
+            <div className="landing-hero__left">
+              <div className="hero-action-row" id="downloads">
+                <span className="hero-action-row__label">Download Registered Schools List</span>
+                <a href="#" className="hero-action-row__btn">Click Here</a>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Key features — brief, factual */}
-      <section style={{ padding: '2.5rem 0', borderBottom: '1px solid var(--border)' }}>
-        <div className="container">
-          <h2>Technical Architecture</h2>
-          <p style={{ marginTop: '0.375rem', marginBottom: '1.5rem' }}>
-            Built for reliability in low-connectivity environments.
-          </p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '0.875rem' }}>
-            {[
-              {
-                title: 'ECDSA P-256 Signatures',
-                desc: 'Every pass credential is signed with Elliptic Curve Digital Signature Algorithm. Tamper-proof — any modification invalidates the signature.',
-              },
-              {
-                title: 'Offline-First Verification',
-                desc: 'Conductors verify QR codes entirely offline using Web Crypto API. No network call required. Public key and revocation list are cached locally.',
-              },
-              {
-                title: 'Automatic Synchronisation',
-                desc: 'Offline scan events are queued locally and uploaded automatically when the conductor\'s device reconnects to the internet.',
-              },
-              {
-                title: 'Multi-Institution Architecture',
-                desc: 'Each institution sees only its own students\' data. Role-based access control enforced on both backend and frontend.',
-              },
-            ].map((f) => (
-              <div key={f.title} className="card">
-                <div style={{ fontWeight: 700, fontSize: '0.9375rem', marginBottom: '0.5rem', color: 'var(--text)' }}>
-                  {f.title}
+              <div className="hero-action-row">
+                <span className="hero-action-row__label">Download Instructions</span>
+                <a href="#" className="hero-action-row__btn">Click Here</a>
+              </div>
+              <div className="hero-action-group">
+                <h3 className="hero-action-group__title">Apply For New Student Concession</h3>
+                <Link to="/register/student" className="hero-cta-btn hero-cta-btn--orange" id="hero-school-register">School Students Registration</Link>
+                <Link to="/register/student" className="hero-cta-btn hero-cta-btn--orange" id="hero-college-register">College Students Registration</Link>
+              </div>
+              <div className="hero-action-group">
+                <h3 className="hero-action-group__title">Institution Registration</h3>
+                <Link to="/register/institution" className="hero-cta-btn hero-cta-btn--orange" id="hero-school-inst-register">School Registration</Link>
+                <Link to="/register/institution" className="hero-cta-btn hero-cta-btn--orange" id="hero-college-inst-register">College Registration</Link>
+              </div>
+              <div className="hero-action-group">
+                <Link to="/conductor" className="hero-cta-btn hero-cta-btn--teal" id="hero-conductor">Conductor Scanner</Link>
+              </div>
+            </div>
+            <div className="landing-hero__right">
+              {user ? (
+                <div className="hero-login-panel">
+                  <div className="hero-login-panel__header"><h2 className="hero-login-panel__title">Welcome back!</h2></div>
+                  <div className="hero-login-panel__body" style={{ textAlign: 'center' }}>
+                    <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>You are signed in as <strong>{user.email}</strong></p>
+                    <Link to={`/${user.role}`} className="hero-login-panel__submit" style={{ display: 'block', textDecoration: 'none', textAlign: 'center' }}>Go to Dashboard</Link>
+                  </div>
                 </div>
-                <p style={{ fontSize: '0.875rem', margin: 0, lineHeight: 1.6 }}>{f.desc}</p>
-              </div>
-            ))}
+              ) : (
+                <HeroLoginPanel onAuth={onAuth || (() => {})} />
+              )}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Demo accounts */}
-      <section className="landing-demo-accounts">
-        <div className="container">
-          <h2>Demo Accounts</h2>
-          <p style={{ marginTop: '0.375rem', marginBottom: 0 }}>
-            All demo accounts use the password{' '}
-            <code>demo123</code>. Data resets on server restart.
-          </p>
-          <div className="demo-accounts-grid">
-            {DEMO_ACCOUNTS.map((acc) => (
-              <div key={acc.role} className="demo-account">
-                <div className="demo-account__role">{acc.role}</div>
-                <div className="demo-account__email">{acc.email}</div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                  {acc.desc}
-                </div>
-              </div>
-            ))}
-          </div>
-          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '1rem' }}>
-            ⚠️ Demo mode: Data stored in an in-memory SQLite database.
-            Production deployment requires a persistent database.
-          </p>
-        </div>
-      </section>
     </main>
   );
 }

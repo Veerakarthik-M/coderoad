@@ -80,6 +80,9 @@ function FileUpload({ label, id, accept, hint, onFile, file, required = false })
           cursor: 'pointer',
           background: file ? 'var(--success-light)' : 'var(--bg-input)',
           transition: 'border-color 0.15s, background 0.15s',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
         }}
       >
         <input
@@ -91,11 +94,19 @@ function FileUpload({ label, id, accept, hint, onFile, file, required = false })
           style={{ display: 'none' }}
         />
         {file ? (
-          <div>
-            <div style={{ fontSize: '1.75rem', marginBottom: '0.375rem' }}>✅</div>
-            <div style={{ fontWeight: 700, color: 'var(--text)', fontSize: '0.875rem' }}>{file.name}</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-              {(file.size / 1024).toFixed(0)} KB · Click to change
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+            {file.type.startsWith('image/') ? (
+              <div style={{ width: '80px', height: '80px', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+                <img src={URL.createObjectURL(file)} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
+            ) : (
+              <div style={{ fontSize: '2rem' }}>📄</div>
+            )}
+            <div>
+              <div style={{ fontWeight: 700, color: 'var(--text)', fontSize: '0.875rem' }}>{file.name}</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                {(file.size / 1024).toFixed(0)} KB · Click to change
+              </div>
             </div>
           </div>
         ) : (
@@ -143,7 +154,7 @@ export default function StudentRegister({ onAuth }) {
     let age = now.getFullYear() - birth.getFullYear();
     if (now.getMonth() < birth.getMonth() ||
         (now.getMonth() === birth.getMonth() && now.getDate() < birth.getDate())) age--;
-    return age;
+    return Math.max(0, age);
   };
 
   const validateStep = () => {
@@ -287,9 +298,15 @@ export default function StudentRegister({ onAuth }) {
   return (
     <div className="register-shell">
       <div className="register-container">
-        <div className="register-header">
-          <div className="register-header__subtitle" style={{ color: 'var(--blue-600)', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '0.5rem', fontSize: '0.75rem' }}>ANAVANDI · KSRTC</div>
-          <h1 className="register-header__title">Student Concession Pass Application</h1>
+        <div className="register-header" style={{ position: 'relative' }}>
+          <div style={{ position: 'absolute', top: 0, left: 0 }}>
+            <a href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--blue-700)', fontWeight: 800, fontSize: '1rem' }}>
+              <div style={{ background: 'var(--blue-600)', color: 'white', width: '28px', height: '28px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 900 }}>A</div>
+              ANAVANDI
+            </a>
+          </div>
+          <div className="register-header__subtitle" style={{ color: 'var(--blue-600)', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '0.5rem', fontSize: '0.75rem', marginTop: '1rem' }}>STUDENT PASS</div>
+          <h1 className="register-header__title">Student Concession Application</h1>
           <p className="register-header__subtitle">
             Complete all steps to apply for your digital bus concession pass
           </p>
@@ -313,30 +330,60 @@ export default function StudentRegister({ onAuth }) {
 
               <div className="form-group">
                 <label className="form-label" htmlFor="c-type">I am a student at a <span className="required">*</span></label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.625rem', marginTop: '0.375rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.75rem' }}>
                   {[
-                    { id: 'type-college', value: 'college', label: '🎓 College / University', desc: 'B.Tech, Degree, Post Grad, Diploma…' },
-                    { id: 'type-school', value: 'school', label: '🏫 School', desc: 'Class 8–12, SSC, CBSE, ICSE, Plus Two…' },
-                  ].map(opt => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      id={opt.id}
-                      onClick={() => set('studentType', opt.value)}
-                      style={{
-                        padding: '0.875rem',
-                        background: form.studentType === opt.value ? 'var(--primary-light)' : 'var(--bg-elevated)',
-                        border: `2px solid ${form.studentType === opt.value ? 'var(--primary)' : 'var(--border)'}`,
-                        borderRadius: 'var(--radius-lg)',
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        transition: 'border-color 0.15s, background 0.15s',
-                      }}
-                    >
-                      <div style={{ fontWeight: 700, color: 'var(--text)', marginBottom: '0.2rem' }}>{opt.label}</div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{opt.desc}</div>
-                    </button>
-                  ))}
+                    {
+                      id: 'type-college', value: 'college',
+                      icon: '🎓',
+                      label: 'College / University',
+                      desc: 'B.Tech, Degree, Post Grad, Diploma, ITI',
+                      color: '#0d9488', lightColor: '#f0fdfa', borderColor: '#0d9488',
+                    },
+                    {
+                      id: 'type-school', value: 'school',
+                      icon: '🏫',
+                      label: 'School',
+                      desc: 'Class 8–12, CBSE, ICSE, SSLC, Plus Two',
+                      color: '#f97316', lightColor: '#fff7ed', borderColor: '#f97316',
+                    },
+                  ].map(opt => {
+                    const selected = form.studentType === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        id={opt.id}
+                        onClick={() => set('studentType', opt.value)}
+                        style={{
+                          padding: '1.25rem 1rem',
+                          background: selected ? opt.lightColor : '#ffffff',
+                          border: `2.5px solid ${selected ? opt.color : '#e5e7eb'}`,
+                          borderRadius: '12px',
+                          cursor: 'pointer',
+                          textAlign: 'center',
+                          transition: 'all 0.18s ease',
+                          boxShadow: selected ? `0 4px 16px ${opt.color}30` : '0 1px 4px rgba(0,0,0,.06)',
+                          transform: selected ? 'translateY(-2px)' : 'none',
+                          position: 'relative',
+                        }}
+                      >
+                        {selected && (
+                          <div style={{
+                            position: 'absolute', top: '8px', right: '8px',
+                            width: '20px', height: '20px', borderRadius: '50%',
+                            background: opt.color, color: 'white',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: '11px', fontWeight: 900,
+                          }}>✓</div>
+                        )}
+                        <div style={{ fontSize: '2.25rem', marginBottom: '0.625rem', lineHeight: 1 }}>{opt.icon}</div>
+                        <div style={{ fontWeight: 800, color: selected ? opt.color : '#111827', fontSize: '0.9375rem', marginBottom: '0.375rem' }}>
+                          {opt.label}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: '#6b7280', lineHeight: 1.5 }}>{opt.desc}</div>
+                      </button>
+                    );
+                  })}
                 </div>
                 <FieldError msg={fieldErrors.studentType} />
               </div>
@@ -481,15 +528,24 @@ export default function StudentRegister({ onAuth }) {
               <div className="card__section-label">Institution Details</div>
 
               <div className="form-group">
-                <label className="form-label" htmlFor="c-institution">Select Institution <span className="required">*</span></label>
-                <select id="c-institution" className="form-select" value={form.institutionId} onChange={e => set('institutionId', e.target.value)}>
-                  <option value="">Select your college / school</option>
+                <label className="form-label" htmlFor="c-institution">Institution Name <span className="required">*</span></label>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Select from the list or type manually if not found</div>
+                <input 
+                  id="c-institution" 
+                  className="form-input" 
+                  list="inst-list"
+                  value={form.institutionId} 
+                  onChange={e => set('institutionId', e.target.value)}
+                  placeholder="Type or select your institution..."
+                />
+                <datalist id="inst-list">
                   {institutions.map(inst => (
                     <option key={inst.id} value={inst.id}>
-                      {inst.name} — {inst.place}, {inst.district}
+                      {inst.name} — {inst.place}
                     </option>
                   ))}
-                </select>
+                  <option value="Other / Not Listed">Other / Not Listed (Type below)</option>
+                </datalist>
                 <FieldError msg={fieldErrors.institutionId} />
               </div>
 
@@ -511,15 +567,40 @@ export default function StudentRegister({ onAuth }) {
                 <label className="form-label" htmlFor="c-course">
                   {isSchool ? 'Class / Standard' : 'Course / Programme'} <span className="required">*</span>
                 </label>
-                <input id="c-course" className="form-input" value={form.course} onChange={e => set('course', e.target.value)} placeholder={isSchool ? 'e.g. Class 11 — Science' : 'e.g. B.Tech Computer Science'} />
+                <input id="c-course" className="form-input" list="course-list" value={form.course} onChange={e => set('course', e.target.value)} placeholder={isSchool ? 'e.g. Class 11 — Science' : 'e.g. B.Tech, BSc, BA, etc.'} />
+                <datalist id="course-list">
+                  <option value="B.Tech" />
+                  <option value="M.Tech" />
+                  <option value="B.Sc" />
+                  <option value="M.Sc" />
+                  <option value="B.Com" />
+                  <option value="M.Com" />
+                  <option value="BA" />
+                  <option value="MA" />
+                  <option value="Diploma" />
+                  <option value="ITI" />
+                  <option value="Other (Type Manually)" />
+                </datalist>
                 <FieldError msg={fieldErrors.course} />
               </div>
 
               {!isSchool && (
                 <>
                   <div className="form-group">
-                    <label className="form-label" htmlFor="c-department">Department</label>
-                    <input id="c-department" className="form-input" value={form.department} onChange={e => set('department', e.target.value)} placeholder="e.g. Computer Science & Engineering" />
+                    <label className="form-label" htmlFor="c-department">Department / Branch</label>
+                    <input id="c-department" className="form-input" list="dept-list" value={form.department} onChange={e => set('department', e.target.value)} placeholder="e.g. Computer Science, Mechanical..." />
+                    <datalist id="dept-list">
+                      <option value="Computer Science & Engineering" />
+                      <option value="Mechanical Engineering" />
+                      <option value="Civil Engineering" />
+                      <option value="Electrical Engineering" />
+                      <option value="Electronics & Communication" />
+                      <option value="Information Technology" />
+                      <option value="Physics" />
+                      <option value="Mathematics" />
+                      <option value="Commerce" />
+                      <option value="Other (Type Manually)" />
+                    </datalist>
                   </div>
 
                   <div className="form-row">
