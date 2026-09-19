@@ -56,14 +56,16 @@ function InstitutionPicker({ institutions, value, onChange }) {
   const selectedInst = institutions.find(i => String(i.id) === String(value));
 
   const filtered = institutions.filter(i =>
-    (i.name + ' ' + i.place + ' ' + (i.district || '')).toLowerCase().includes(search.toLowerCase())
-  ).slice(0, 15);
+    (i.name + ' ' + i.place + ' ' + (i.district || '') + ' ' + (i.institution_type || '')).toLowerCase().includes(search.toLowerCase())
+  ).slice(0, 20);
 
   useEffect(() => {
     const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
+
+  const isStatic = selectedInst && String(selectedInst.id).startsWith('static_');
 
   return (
     <div ref={ref} style={{ position: 'relative' }}>
@@ -74,7 +76,7 @@ function InstitutionPicker({ institutions, value, onChange }) {
           padding: '0.625rem 0.875rem', border: '1.5px solid var(--border)',
           borderRadius: 'var(--radius)', background: '#fff', cursor: 'pointer',
           fontSize: '0.9rem', minHeight: '44px',
-          borderColor: open ? 'var(--blue-600)' : 'var(--border)',
+          borderColor: open ? '#059669' : 'var(--border)',
           boxShadow: open ? '0 0 0 3px rgba(5,150,105,0.12)' : 'none',
         }}
         id="c-institution"
@@ -82,52 +84,79 @@ function InstitutionPicker({ institutions, value, onChange }) {
         aria-expanded={open}
       >
         <span style={{ color: selectedInst ? 'var(--text)' : 'var(--text-placeholder)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {selectedInst ? `${selectedInst.name} — ${selectedInst.place}` : 'Select your institution...'}
+          {selectedInst ? `${selectedInst.name} — ${selectedInst.place}` : 'Search and select your institution...'}
         </span>
-        <span style={{ marginLeft: '0.5rem', color: 'var(--text-muted)', fontSize: '0.75rem' }}>▼</span>
+        <span style={{ marginLeft: '0.5rem', color: 'var(--text-muted)', fontSize: '0.75rem' }}>{open ? '▲' : '▼'}</span>
       </div>
+
+      {/* Show warning if institution is not registered on portal */}
+      {isStatic && (
+        <div style={{ marginTop: '0.375rem', fontSize: '0.75rem', background: '#fef9c3', border: '1px solid #fde68a', borderRadius: '4px', padding: '0.5rem 0.75rem', color: '#92400e' }}>
+          ⚠️ <strong>{selectedInst.name}</strong> is not yet registered on the ANAVANDI portal. Your application will be submitted, but approval may require manual processing. Ask your institution to register at <strong>anavandi.in</strong>.
+        </div>
+      )}
+      {selectedInst && !isStatic && (
+        <div style={{ marginTop: '0.375rem', fontSize: '0.75rem', background: '#d1fae5', border: '1px solid #6ee7b7', borderRadius: '4px', padding: '0.375rem 0.75rem', color: '#065f46' }}>
+          ✅ This institution is registered on ANAVANDI — your application will be reviewed digitally.
+        </div>
+      )}
 
       {open && (
         <div style={{
           position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 999,
-          background: '#fff', border: '1.5px solid var(--blue-600)', borderRadius: 'var(--radius-lg)',
-          boxShadow: '0 8px 24px rgba(0,0,0,0.12)', overflow: 'hidden',
+          background: '#fff', border: '1.5px solid #059669', borderRadius: 'var(--radius-lg)',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.15)', overflow: 'hidden',
         }}>
-          <div style={{ padding: '0.5rem' }}>
+          <div style={{ padding: '0.5rem', borderBottom: '1px solid #e5e7eb' }}>
             <input
               autoFocus
               type="text"
-              placeholder="Search institution name or place..."
+              placeholder="Type institution name, place or district..."
               value={search}
               onChange={e => setSearch(e.target.value)}
               style={{
-                width: '100%', padding: '0.5rem 0.75rem', border: '1px solid var(--border)',
+                width: '100%', padding: '0.5rem 0.75rem', border: '1px solid #e5e7eb',
                 borderRadius: 'var(--radius)', fontSize: '0.875rem', outline: 'none',
+                background: '#f9fafb',
               }}
             />
+            <div style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '0.375rem', paddingLeft: '0.25rem' }}>
+              {institutions.length} Kerala institutions • ✅ = Registered on portal
+            </div>
           </div>
-          <div style={{ maxHeight: '220px', overflowY: 'auto' }}>
+          <div style={{ maxHeight: '260px', overflowY: 'auto' }}>
             {filtered.length === 0 ? (
-              <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>No institution found</div>
-            ) : filtered.map(inst => (
-              <div
-                key={inst.id}
-                onClick={() => { onChange(String(inst.id)); setOpen(false); }}
-                style={{
-                  padding: '0.75rem 1rem', cursor: 'pointer',
-                  background: String(value) === String(inst.id) ? 'var(--blue-50)' : '#fff',
-                  borderBottom: '1px solid var(--gray-100)',
-                  transition: 'background 0.1s',
-                }}
-                onMouseEnter={e => e.currentTarget.style.background = 'var(--blue-50)'}
-                onMouseLeave={e => e.currentTarget.style.background = String(value) === String(inst.id) ? 'var(--blue-50)' : '#fff'}
-              >
-                <div style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--text)' }}>{inst.name}</div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                  📍 {inst.place}{inst.district ? `, ${inst.district}` : ''} {inst.institution_type ? `· ${inst.institution_type}` : ''}
-                </div>
+              <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+                No match found. Try a different spelling or district name.
               </div>
-            ))}
+            ) : filtered.map(inst => {
+              const isReg = !String(inst.id).startsWith('static_');
+              return (
+                <div
+                  key={inst.id}
+                  onClick={() => { onChange(String(inst.id)); setOpen(false); }}
+                  style={{
+                    padding: '0.625rem 1rem', cursor: 'pointer',
+                    background: String(value) === String(inst.id) ? '#ecfdf5' : '#fff',
+                    borderBottom: '1px solid #f3f4f6',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#f0fdf4'}
+                  onMouseLeave={e => e.currentTarget.style.background = String(value) === String(inst.id) ? '#ecfdf5' : '#fff'}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <span style={{ fontWeight: 700, fontSize: '0.8375rem', color: '#111827', flex: 1 }}>{inst.name}</span>
+                    {isReg ? (
+                      <span style={{ fontSize: '0.65rem', background: '#d1fae5', color: '#065f46', padding: '1px 6px', borderRadius: '999px', fontWeight: 700, flexShrink: 0 }}>✓ Registered</span>
+                    ) : (
+                      <span style={{ fontSize: '0.65rem', background: '#fef3c7', color: '#92400e', padding: '1px 6px', borderRadius: '999px', fontWeight: 700, flexShrink: 0 }}>Not on Portal</span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: '#6b7280', marginTop: '2px' }}>
+                    📍 {inst.place}{inst.district ? `, ${inst.district}` : ''}{inst.institution_type ? ` · ${inst.institution_type}` : ''}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

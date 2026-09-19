@@ -173,11 +173,39 @@ router.get('/me', authMiddleware, (req, res) => {
   res.json({ user, institution });
 });
 
-// GET /api/auth/institutions â€” list all institutions (for student registration dropdown)
-router.get('/institutions', (req, res) => {
-  const institutions = queryAll('SELECT id, name, place, district, institution_type, education_level FROM institutions ORDER BY name');
-  res.json(institutions);
+// GET /api/auth/institutions — list all institutions (DB registered + static Kerala list)
+router.get('/institutions', async (req, res) => {
+  try {
+    const { KERALA_INSTITUTIONS } = await import('../kerala-institutions.js').catch(() => ({ KERALA_INSTITUTIONS: [] }));
+    const dbInstitutions = queryAll('SELECT id, name, place, district, institution_type, education_level FROM institutions ORDER BY name');
+
+    // Build a set of DB institution names (normalised) to avoid duplicates
+    const dbNames = new Set(dbInstitutions.map(i => i.name.toLowerCase().trim()));
+
+    // Static list items not already in DB get a synthetic negative ID so client can detect them
+    const staticOnly = KERALA_INSTITUTIONS
+      .filter(i => !dbNames.has(i.name.toLowerCase().trim()))
+      .map((i, idx) => ({
+        id: `static_${idx}`,
+        name: i.name,
+        place: i.place,
+        district: i.district,
+        institution_type: i.institution_type,
+        education_level: i.education_level,
+        registered: false,
+      }));
+
+    const merged = [
+      ...dbInstitutions.map(i => ({ ...i, registered: true })),
+      ...staticOnly,
+    ].sort((a, b) => a.name.localeCompare(b.name));
+
+    res.json(merged);
+  } catch (err) {
+    // Fallback: just return DB institutions
+    const dbInstitutions = queryAll('SELECT id, name, place, district, institution_type, education_level FROM institutions ORDER BY name');
+    res.json(dbInstitutions.map(i => ({ ...i, registered: true })));
+  }
 });
 
 export default router;
-
