@@ -103,30 +103,55 @@ export default function AdminDashboard() {
   const [rejectReasonInst, setRejectReasonInst] = useState('');
   const [phoneConfirmed, setPhoneConfirmed] = useState(false);
 
-  useEffect(() => { loadStats(); loadApplications(); }, []);
+  useEffect(() => {
+    loadStats();
+    loadApplications();
+    loadInstitutions();
+  }, []);
+
   useEffect(() => {
     if (tab === 'applications') loadApplications();
     else if (tab === 'credentials') loadCredentials();
-    else if (tab === 'institutions') loadInstitutions();
+    else if (tab === 'institutions') {
+      loadInstitutions();
+      loadStats();
+    }
   }, [tab]);
 
   const loadStats = async () => {
-    try { const d = await api.get('/admin/stats'); setStats(d); }
-    catch (err) { setPageError('Could not load stats: ' + err.message); }
+    try {
+      const d = await api.get('/admin/stats');
+      setStats(d);
+      setPageError(prev => (prev && prev.includes('stats') ? '' : prev));
+    } catch (err) {
+      setPageError('Could not load stats: ' + err.message);
+    }
   };
 
   const loadApplications = async () => {
     setLoading(true);
-    try { const d = await api.get('/admin/applications'); setApplications(d.applications || []); }
-    catch (err) { setPageError('Could not load applications: ' + err.message); }
-    finally { setLoading(false); }
+    try {
+      const d = await api.get('/admin/applications');
+      setApplications(d.applications || []);
+      setPageError(prev => (prev && prev.includes('applications') ? '' : prev));
+    } catch (err) {
+      setPageError('Could not load applications: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const loadCredentials = async () => {
     setLoading(true);
-    try { const d = await api.get('/admin/credentials'); setCredentials(d.credentials || []); }
-    catch (err) { setPageError('Could not load credentials: ' + err.message); }
-    finally { setLoading(false); }
+    try {
+      const d = await api.get('/admin/credentials');
+      setCredentials(d.credentials || []);
+      setPageError(prev => (prev && prev.includes('credentials') ? '' : prev));
+    } catch (err) {
+      setPageError('Could not load credentials: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const loadInstitutions = async () => {
@@ -134,6 +159,7 @@ export default function AdminDashboard() {
     try {
       const d = await api.get('/admin/institutions');
       setInstitutions(d.institutions || []);
+      setPageError(prev => (prev && prev.includes('institutions') ? '' : prev));
     } catch (err) {
       setPageError('Could not load institutions: ' + err.message);
     } finally {

@@ -202,7 +202,7 @@ router.get('/institutions', authMiddleware, requireRole('admin'), (req, res) => 
        (SELECT COUNT(*) FROM applications WHERE institution_id = i.id) as total_students,
        (SELECT COUNT(*) FROM applications WHERE institution_id = i.id AND status = 'inst_approved') as pending_passes
        FROM institutions i
-       JOIN users u ON i.user_id = u.id
+       LEFT JOIN users u ON i.user_id = u.id
        ORDER BY 
           CASE COALESCE(i.status, 'verified')
             WHEN 'pending_ksrtc_verification' THEN 1

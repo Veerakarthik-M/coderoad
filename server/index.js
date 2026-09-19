@@ -30,20 +30,30 @@ async function start() {
   // Auto-seed demo data if database is empty (handles ephemeral Render restarts)
   await seedIfEmpty();
 
-  // Routes
+  // Routes (standard /api prefix)
   app.use('/api/auth', authRoutes);
   app.use('/api/student', studentRoutes);
   app.use('/api/institution', institutionRoutes);
   app.use('/api/admin', adminRoutes);
   app.use('/api/verify', verifyRoutes);
 
+  // Fallback direct mounts (handles any client or proxy calling /admin/* directly)
+  app.use('/auth', authRoutes);
+  app.use('/student', studentRoutes);
+  app.use('/institution', institutionRoutes);
+  app.use('/admin', adminRoutes);
+  app.use('/verify', verifyRoutes);
+
   // Serve uploaded files (ID cards, photos) via /uploads/:filename
   app.use('/uploads', express.static(join(__dirname, 'uploads')));
+  app.use('/api/uploads', express.static(join(__dirname, 'uploads')));
 
   // Health check
-  app.get('/api/health', (req, res) => {
+  const healthHandler = (req, res) => {
     res.json({ status: 'ok', service: 'ANAVANDI Server', timestamp: new Date().toISOString() });
-  });
+  };
+  app.get('/api/health', healthHandler);
+  app.get('/health', healthHandler);
 
   app.listen(PORT, () => {
     console.log(`\n🚌 ANAVANDI Server running on http://localhost:${PORT}`);
