@@ -47,6 +47,94 @@ function FieldError({ msg }) {
   return msg ? <div className="form-error" role="alert">{msg}</div> : null;
 }
 
+// ── Institution Picker ───────────────────────────────────────
+function InstitutionPicker({ institutions, value, onChange }) {
+  const [search, setSearch] = useState('');
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  const selectedInst = institutions.find(i => String(i.id) === String(value));
+
+  const filtered = institutions.filter(i =>
+    (i.name + ' ' + i.place + ' ' + (i.district || '')).toLowerCase().includes(search.toLowerCase())
+  ).slice(0, 15);
+
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <div
+        onClick={() => { setOpen(o => !o); setSearch(''); }}
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '0.625rem 0.875rem', border: '1.5px solid var(--border)',
+          borderRadius: 'var(--radius)', background: '#fff', cursor: 'pointer',
+          fontSize: '0.9rem', minHeight: '44px',
+          borderColor: open ? 'var(--blue-600)' : 'var(--border)',
+          boxShadow: open ? '0 0 0 3px rgba(5,150,105,0.12)' : 'none',
+        }}
+        id="c-institution"
+        role="combobox"
+        aria-expanded={open}
+      >
+        <span style={{ color: selectedInst ? 'var(--text)' : 'var(--text-placeholder)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {selectedInst ? `${selectedInst.name} — ${selectedInst.place}` : 'Select your institution...'}
+        </span>
+        <span style={{ marginLeft: '0.5rem', color: 'var(--text-muted)', fontSize: '0.75rem' }}>▼</span>
+      </div>
+
+      {open && (
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 999,
+          background: '#fff', border: '1.5px solid var(--blue-600)', borderRadius: 'var(--radius-lg)',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.12)', overflow: 'hidden',
+        }}>
+          <div style={{ padding: '0.5rem' }}>
+            <input
+              autoFocus
+              type="text"
+              placeholder="Search institution name or place..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              style={{
+                width: '100%', padding: '0.5rem 0.75rem', border: '1px solid var(--border)',
+                borderRadius: 'var(--radius)', fontSize: '0.875rem', outline: 'none',
+              }}
+            />
+          </div>
+          <div style={{ maxHeight: '220px', overflowY: 'auto' }}>
+            {filtered.length === 0 ? (
+              <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>No institution found</div>
+            ) : filtered.map(inst => (
+              <div
+                key={inst.id}
+                onClick={() => { onChange(String(inst.id)); setOpen(false); }}
+                style={{
+                  padding: '0.75rem 1rem', cursor: 'pointer',
+                  background: String(value) === String(inst.id) ? 'var(--blue-50)' : '#fff',
+                  borderBottom: '1px solid var(--gray-100)',
+                  transition: 'background 0.1s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = 'var(--blue-50)'}
+                onMouseLeave={e => e.currentTarget.style.background = String(value) === String(inst.id) ? 'var(--blue-50)' : '#fff'}
+              >
+                <div style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--text)' }}>{inst.name}</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                  📍 {inst.place}{inst.district ? `, ${inst.district}` : ''} {inst.institution_type ? `· ${inst.institution_type}` : ''}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── File Upload Component ────────────────────────────────────
 function FileUpload({ label, id, accept, hint, onFile, file, required = false }) {
   const inputRef = useRef();
@@ -553,25 +641,14 @@ export default function StudentRegister({ onAuth }) {
             <div>
               <div className="card__section-label">Institution Details</div>
 
-              <div className="form-group">
+              <div className="form-group" style={{ position: 'relative' }}>
                 <label className="form-label" htmlFor="c-institution">Institution Name <span className="required">*</span></label>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Select from the list or type manually if not found</div>
-                <input 
-                  id="c-institution" 
-                  className="form-input" 
-                  list="inst-list"
-                  value={form.institutionId} 
-                  onChange={e => set('institutionId', e.target.value)}
-                  placeholder="Type or select your institution..."
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Select from the registered institutions below</div>
+                <InstitutionPicker
+                  institutions={institutions}
+                  value={form.institutionId}
+                  onChange={(id) => set('institutionId', id)}
                 />
-                <datalist id="inst-list">
-                  {institutions.map(inst => (
-                    <option key={inst.id} value={inst.id}>
-                      {inst.name} — {inst.place}
-                    </option>
-                  ))}
-                  <option value="Other / Not Listed">Other / Not Listed (Type below)</option>
-                </datalist>
                 <FieldError msg={fieldErrors.institutionId} />
               </div>
 

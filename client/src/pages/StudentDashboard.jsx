@@ -3,27 +3,46 @@ import { Link } from 'react-router-dom';
 import { api } from '../api';
 
 const STATUS_STEPS = ['pending', 'inst_approved', 'approved', 'issued'];
-const STATUS_LABELS = ['Applied', 'Institution\nVerified', 'KSRTC\nApproved', 'Pass\nIssued'];
+const STATUS_LABELS = ['Applied', 'Institution Verified', 'KSRTC Approved', 'Pass Issued'];
 
 function StatusPipeline({ status }) {
   const currentStep = STATUS_STEPS.indexOf(status);
   return (
-    <div className="pipeline" role="list" aria-label="Application status">
+    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 0, margin: '1rem 0', overflowX: 'auto', paddingBottom: '0.25rem' }}>
       {STATUS_LABELS.map((label, i) => {
-        const isCompleted = i < currentStep || (i === currentStep && status === 'issued');
+        const isCompleted = i < currentStep || status === 'issued';
         const isActive = i === currentStep && status !== 'issued';
         return (
-          <div key={i} style={{ display: 'contents' }}>
-            <div className="pipeline__step" role="listitem">
-              <div className={`pipeline__dot${isCompleted ? ' pipeline__dot--completed' : isActive ? ' pipeline__dot--active' : ''}`}>
+          <div key={i} style={{ display: 'flex', alignItems: 'flex-start', flex: 1, minWidth: 0 }}>
+            {/* Step */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, minWidth: 0 }}>
+              <div style={{
+                width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontWeight: 800, fontSize: '0.8rem',
+                background: isCompleted ? '#059669' : isActive ? '#064e3b' : '#e5e7eb',
+                color: isCompleted || isActive ? '#fff' : '#9ca3af',
+                boxShadow: isActive ? '0 0 0 3px rgba(6,78,59,0.2)' : 'none',
+                transition: 'all 0.2s',
+              }}>
                 {isCompleted ? '✓' : i + 1}
               </div>
-              <div className={`pipeline__label${isCompleted ? ' pipeline__label--completed' : isActive ? ' pipeline__label--active' : ''}`}>
+              <div style={{
+                fontSize: '0.65rem', fontWeight: isActive ? 700 : 600,
+                textAlign: 'center', marginTop: '0.375rem', lineHeight: 1.3,
+                color: isCompleted ? '#059669' : isActive ? '#064e3b' : '#9ca3af',
+                maxWidth: 72, wordBreak: 'break-word',
+              }}>
                 {label}
               </div>
             </div>
+            {/* Connector line */}
             {i < STATUS_LABELS.length - 1 && (
-              <div className={`pipeline__line${isCompleted ? ' pipeline__line--completed' : ''}`} />
+              <div style={{
+                height: 3, flex: 1, marginTop: 14, minWidth: 12,
+                background: isCompleted ? '#059669' : '#e5e7eb',
+                transition: 'background 0.3s',
+              }} />
             )}
           </div>
         );

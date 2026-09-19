@@ -169,9 +169,27 @@ function SyncQueuePanel({ queue, online, onSync, syncing }) {
 function QRScannerView({ onScan, onCancel, onError }) {
   const containerRef = useRef(null);
   const scannerRef = useRef(null);
+  const [camError, setCamError] = useState('');
 
   useEffect(() => {
     if (!containerRef.current) return;
+
+    // Check if running on HTTPS or localhost — camera requires secure context
+    const isSecure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+    if (!isSecure) {
+      const msg = 'Camera access requires a secure (HTTPS) connection. Please access this page via HTTPS or ask your administrator.';
+      setCamError(msg);
+      if (onError) onError(msg);
+      return;
+    }
+
+    // Check if getUserMedia is available
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      const msg = 'Your browser does not support camera access. Please use Chrome or Safari on a modern device.';
+      setCamError(msg);
+      if (onError) onError(msg);
+      return;
+    }
 
     const scanner = new Html5QrcodeScanner(
       'qr-reader',
@@ -187,7 +205,14 @@ function QRScannerView({ onScan, onCancel, onError }) {
 
     scanner.render(
       (decodedText) => { onScan(decodedText); scanner.clear().catch(() => {}); },
-      (error) => { /* ignore per-frame errors */ }
+      (error) => {
+        // Detect permission denied
+        if (error && (error.includes('Permission') || error.includes('NotAllowed') || error.includes('denied'))) {
+          const msg = 'Camera permission was denied. Please allow camera access in your browser settings and reload.';
+          setCamError(msg);
+          if (onError) onError(msg);
+        }
+      }
     );
 
     scannerRef.current = scanner;
@@ -197,9 +222,20 @@ function QRScannerView({ onScan, onCancel, onError }) {
     };
   }, []);
 
+  if (camError) {
+    return (
+      <div style={{ textAlign: 'center', padding: '1.5rem' }}>
+        <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>📵</div>
+        <div style={{ fontWeight: 700, color: '#dc2626', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Camera Not Available</div>
+        <p style={{ fontSize: '0.8rem', color: '#4b5563', marginBottom: '1rem', lineHeight: 1.6 }}>{camError}</p>
+        <button className="btn btn--outline btn--full" onClick={onCancel} id="cancel-scan-btn">Go Back</button>
+      </div>
+    );
+  }
+
   return (
     <div>
-      <div id="qr-reader" style={{ width: '100%', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }} />
+      <div id="qr-reader" ref={containerRef} style={{ width: '100%', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }} />
       <button
         className="btn btn--outline btn--full"
         style={{ marginTop: '0.75rem' }}
