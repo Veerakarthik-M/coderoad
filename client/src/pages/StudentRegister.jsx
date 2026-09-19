@@ -171,6 +171,7 @@ function FileUpload({ label, id, accept, hint, onFile, file, required = false })
   const handleChange = (e) => {
     const f = e.target.files[0];
     if (f) onFile(f);
+    e.target.value = '';
   };
 
   const handleDrop = (e) => {
@@ -179,10 +180,33 @@ function FileUpload({ label, id, accept, hint, onFile, file, required = false })
     if (f) onFile(f);
   };
 
+  const handleClear = (e) => {
+    e.stopPropagation();
+    onFile(null);
+    if (inputRef.current) inputRef.current.value = '';
+  };
+
   return (
-    <div className="form-group">
-      <label className="form-label" htmlFor={id}>
-        {label} {required && <span className="required">*</span>}
+    <div className="form-group" style={{ marginBottom: 0 }}>
+      <label className="form-label" htmlFor={id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span>{label} {required && <span className="required">*</span>}</span>
+        {file && (
+          <button
+            type="button"
+            onClick={handleClear}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--danger, #dc2626)',
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              padding: '2px 6px',
+            }}
+          >
+            ✕ Remove
+          </button>
+        )}
       </label>
       <div
         onClick={() => inputRef.current?.click()}
@@ -190,16 +214,18 @@ function FileUpload({ label, id, accept, hint, onFile, file, required = false })
         onDrop={handleDrop}
         id={`${id}-dropzone`}
         style={{
-          border: `2px dashed ${file ? 'var(--border-success)' : 'var(--border)'}`,
-          borderRadius: 'var(--radius-lg)',
-          padding: '1.5rem',
+          border: `2px dashed ${file ? 'var(--border-success, #16a34a)' : 'var(--border, #cbd5e1)'}`,
+          borderRadius: 'var(--radius-lg, 8px)',
+          padding: '1.25rem 1rem',
           textAlign: 'center',
           cursor: 'pointer',
-          background: file ? 'var(--success-light)' : 'var(--bg-input)',
+          background: file ? 'var(--success-light, #f0fdf4)' : 'var(--bg-input, #f8fafc)',
           transition: 'border-color 0.15s, background 0.15s',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
+          minHeight: '130px',
+          justifyContent: 'center',
         }}
       >
         <input
@@ -211,34 +237,37 @@ function FileUpload({ label, id, accept, hint, onFile, file, required = false })
           style={{ display: 'none' }}
         />
         {file ? (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', width: '100%' }}>
             {file.type.startsWith('image/') ? (
-              <div style={{ width: '80px', height: '80px', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+              <div style={{ width: '64px', height: '64px', borderRadius: '6px', overflow: 'hidden', boxShadow: '0 2px 6px rgba(0,0,0,0.12)' }}>
                 <img src={URL.createObjectURL(file)} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
             ) : (
               <div style={{ fontSize: '2rem' }}>📄</div>
             )}
-            <div>
-              <div style={{ fontWeight: 700, color: 'var(--text)', fontSize: '0.875rem' }}>{file.name}</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-                {(file.size / 1024).toFixed(0)} KB · Click to change
+            <div style={{ maxWidth: '90%', overflow: 'hidden' }}>
+              <div style={{ fontWeight: 700, color: 'var(--text, #1e293b)', fontSize: '0.8125rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {file.name}
+              </div>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted, #64748b)', marginTop: '0.15rem' }}>
+                {(file.size / 1024).toFixed(0)} KB · Click to replace
               </div>
             </div>
           </div>
         ) : (
           <div>
-            <div style={{ fontSize: '2rem', marginBottom: '0.375rem', opacity: 0.5 }}>📎</div>
-            <div style={{ fontWeight: 600, color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
-              Click or drag & drop to upload
+            <div style={{ fontSize: '1.75rem', marginBottom: '0.25rem', opacity: 0.6 }}>📎</div>
+            <div style={{ fontWeight: 600, color: 'var(--text-secondary, #475569)', fontSize: '0.8125rem' }}>
+              Click to choose file
             </div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>{hint}</div>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted, #94a3b8)', marginTop: '0.2rem' }}>{hint}</div>
           </div>
         )}
       </div>
     </div>
   );
 }
+
 
 // ── Main Component ───────────────────────────────────────────
 export default function StudentRegister({ onAuth }) {
@@ -251,6 +280,9 @@ export default function StudentRegister({ onAuth }) {
   const [form, setForm] = useState(INITIAL_FORM);
   const [emailVerified, setEmailVerified] = useState(false);
   const [idCardFile, setIdCardFile] = useState(null);
+  const [photoFile, setPhotoFile] = useState(null);
+  const [form1File, setForm1File] = useState(null);
+  const [rationFile, setRationFile] = useState(null);
   const [uploadedDocId, setUploadedDocId] = useState(null);
 
   useEffect(() => {
@@ -340,12 +372,12 @@ export default function StudentRegister({ onAuth }) {
     setStep(s => s + 1);
   };
 
-  const uploadIdCard = async (studentUserId) => {
-    if (!idCardFile) return null;
+  const uploadDoc = async (file, docType, applicationId) => {
+    if (!file) return null;
     const formData = new FormData();
-    formData.append('document', idCardFile);
-    formData.append('doc_type', 'id_card');
-    // We don't have application_id yet, so just upload and link later
+    formData.append('document', file);
+    formData.append('doc_type', docType);
+    if (applicationId) formData.append('application_id', applicationId);
     try {
       const response = await fetch(
         `${import.meta.env.VITE_API_URL || 'http://localhost:3001/api'}/student/upload-id`,
@@ -359,7 +391,7 @@ export default function StudentRegister({ onAuth }) {
       if (!response.ok) throw new Error(data.error || 'Upload failed');
       return data;
     } catch (err) {
-      console.warn('ID card upload error:', err.message);
+      console.warn(`Doc upload error (${docType}):`, err.message);
       return null;
     }
   };
@@ -404,26 +436,12 @@ export default function StudentRegister({ onAuth }) {
         concessionCategory: form.concessionCategory,
       });
 
-      // 3. Upload ID card if provided (after we have auth token)
-      if (idCardFile) {
-        // Add application_id to associate it
-        const uploadFormData = new FormData();
-        uploadFormData.append('document', idCardFile);
-        uploadFormData.append('doc_type', 'id_card');
-        if (appData.id) uploadFormData.append('application_id', appData.id);
-        try {
-          await fetch(
-            `${import.meta.env.VITE_API_URL || 'http://localhost:3001/api'}/student/upload-id`,
-            {
-              method: 'POST',
-              headers: { Authorization: `Bearer ${localStorage.getItem('anavandi_token')}` },
-              body: uploadFormData,
-            }
-          );
-        } catch (e) {
-          console.warn('ID upload failed:', e);
-        }
-      }
+      // 3. Upload all attached documents
+      const appId = appData?.id;
+      if (idCardFile) await uploadDoc(idCardFile, 'id_card', appId);
+      if (photoFile) await uploadDoc(photoFile, 'photo', appId);
+      if (form1File) await uploadDoc(form1File, 'form1', appId);
+      if (rationFile) await uploadDoc(rationFile, 'ration', appId);
 
       navigate('/student');
     } catch (err) {
@@ -826,7 +844,7 @@ export default function StudentRegister({ onAuth }) {
                 As per Kerala KSRTC student concession rules, please upload clear copies of the required documents below (Max 5 MB each).
               </p>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
                 <FileUpload
                   id="upload-id-card"
                   label={isSchool ? '1. School ID Card' : '1. College / University ID Card'}
@@ -842,20 +860,20 @@ export default function StudentRegister({ onAuth }) {
                   label="2. Student Photo (Stamp / Passport Size)"
                   accept="image/jpeg,image/png,image/webp"
                   hint="Will be printed on concession pass"
-                  onFile={() => {}}
-                  file={idCardFile}
+                  onFile={setPhotoFile}
+                  file={photoFile}
                   required
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
                 <FileUpload
                   id="upload-form1"
                   label="3. Form No. 1 / Course Certificate"
                   accept="image/jpeg,image/png,image/webp,application/pdf"
                   hint="Form No. 26 signed by Head of Institution"
-                  onFile={() => {}}
-                  file={null}
+                  onFile={setForm1File}
+                  file={form1File}
                 />
 
                 <FileUpload
@@ -863,8 +881,8 @@ export default function StudentRegister({ onAuth }) {
                   label="4. Ration Card / Aadhaar Copy"
                   accept="image/jpeg,image/png,image/webp,application/pdf"
                   hint="For BPL free / APL 30% rate verification"
-                  onFile={() => {}}
-                  file={null}
+                  onFile={setRationFile}
+                  file={rationFile}
                 />
               </div>
               <FieldError msg={fieldErrors.idCard} />
@@ -977,14 +995,32 @@ export default function StudentRegister({ onAuth }) {
 
               <div className="review-section">
                 <div className="review-section__header">
-                  <div className="review-section__title">Documents</div>
+                  <div className="review-section__title">Documents Attached</div>
                   <button className="btn btn--ghost btn--sm" onClick={() => setStep(4)}>Edit</button>
                 </div>
                 <div className="review-fields">
                   <div className="review-field">
-                    <span className="review-field__label">ID Card</span>
+                    <span className="review-field__label">1. Student ID Card</span>
                     <span className="review-field__value">
-                      {idCardFile ? `📎 ${idCardFile.name}` : '—'}
+                      {idCardFile ? `📎 ${idCardFile.name} (${(idCardFile.size / 1024).toFixed(0)} KB)` : '⚠️ Not attached'}
+                    </span>
+                  </div>
+                  <div className="review-field">
+                    <span className="review-field__label">2. Student Photo</span>
+                    <span className="review-field__value">
+                      {photoFile ? `📎 ${photoFile.name} (${(photoFile.size / 1024).toFixed(0)} KB)` : '⚠️ Not attached'}
+                    </span>
+                  </div>
+                  <div className="review-field">
+                    <span className="review-field__label">3. Form No. 1</span>
+                    <span className="review-field__value">
+                      {form1File ? `📎 ${form1File.name} (${(form1File.size / 1024).toFixed(0)} KB)` : '— Optional'}
+                    </span>
+                  </div>
+                  <div className="review-field">
+                    <span className="review-field__label">4. Ration / Aadhaar</span>
+                    <span className="review-field__value">
+                      {rationFile ? `📎 ${rationFile.name} (${(rationFile.size / 1024).toFixed(0)} KB)` : '— Optional'}
                     </span>
                   </div>
                 </div>
