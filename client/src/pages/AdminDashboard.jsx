@@ -303,9 +303,9 @@ export default function AdminDashboard() {
 
         <div className="tab-nav" role="tablist">
           {[
-            { id: 'applications', label: 'Applications' + (stats?.instApproved ? ` (${stats.instApproved} pending)` : '') },
-            { id: 'institutions', label: '🏫 Institutions' + (stats?.pendingInstitutions ? ` (${stats.pendingInstitutions} to call)` : '') },
-            { id: 'credentials', label: 'Issued Credentials' },
+            { id: 'applications', label: 'Applications', count: stats?.instApproved, countType: 'amber', countText: `${stats?.instApproved || 0} pending` },
+            { id: 'institutions', label: '🏫 Institutions', count: stats?.pendingInstitutions, countType: 'green', countText: `${stats?.pendingInstitutions || 0} to call` },
+            { id: 'credentials', label: 'Issued Credentials', count: stats?.activeCredentials, countType: 'neutral', countText: `${stats?.activeCredentials || 0} active` },
           ].map(t => (
             <button
               key={t.id}
@@ -315,7 +315,12 @@ export default function AdminDashboard() {
               aria-selected={tab === t.id}
               id={`admin-tab-${t.id}`}
             >
-              {t.label}
+              <span>{t.label}</span>
+              {t.count > 0 && (
+                <span className={`tab-badge tab-badge--${t.countType}`}>
+                  {t.countText}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -327,32 +332,61 @@ export default function AdminDashboard() {
           ) : (
             <>
               {/* Institution-approved — need KSRTC action */}
-              {instApproved.length > 0 && (
-                <>
-                  <div style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--warning)', marginBottom: '0.625rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-                    <span>⏳</span> Awaiting KSRTC Action ({instApproved.length})
+              {instApproved.length > 0 ? (
+                <div style={{ marginBottom: '2rem' }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '0.85rem 1.25rem',
+                    background: '#fef3c7',
+                    border: '1px solid #fde68a',
+                    borderRadius: '10px 10px 0 0',
+                    borderBottom: 'none'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 800, fontSize: '0.875rem', color: '#92400e' }}>
+                      <span style={{ fontSize: '1.15rem' }}>⏳</span> AWAITING KSRTC APPROVAL & PASS ISSUANCE ({instApproved.length})
+                    </div>
+                    <span style={{ fontSize: '0.75rem', color: '#78350f', fontWeight: 600 }}>
+                      Verified by College · Ready for Digital Signature
+                    </span>
                   </div>
-                  <div style={{ display: 'grid', gap: '0.625rem', marginBottom: '1.5rem' }}>
+                  <div style={{ display: 'grid', gap: '0.875rem', border: '1px solid #fde68a', borderRadius: '0 0 10px 10px', padding: '1.25rem', background: '#fffbeb' }}>
                     {instApproved.map(app => (
-                      <div key={app.id} className="card" style={{ padding: '1rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
-                          <div>
-                            <div style={{ fontWeight: 700, color: 'var(--text)', fontSize: '0.9375rem' }}>{app.student_name}</div>
-                            <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
-                              {app.roll_no} · {app.course}
+                      <div key={app.id} className="card" style={{ padding: '1.25rem', border: '1px solid #fed7aa', boxShadow: '0 2px 8px rgba(245, 158, 11, 0.08)' }}>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+                          <div style={{ flex: 1, minWidth: '280px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                              <span style={{ fontWeight: 800, color: 'var(--text)', fontSize: '1.0625rem' }}>{app.student_name}</span>
+                              <span className="badge badge--pending" style={{ fontSize: '0.6875rem' }}>Awaiting KSRTC Approval</span>
+                              <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>Roll No: {app.roll_no}</span>
                             </div>
-                            <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
-                              {app.institution_name} — {app.institution_district}
+                            <div style={{ fontSize: '0.85rem', color: '#475569', marginTop: '0.25rem', fontWeight: 500 }}>
+                              📚 <strong>{app.course}</strong> · {app.institution_name} ({app.institution_district})
                             </div>
-                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
-                              Route: {app.route_from} → {app.route_to}
-                              {app.distance_km ? ` · ${app.distance_km} km` : ''}
+                            <div style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.4rem',
+                              background: '#f1f5f9',
+                              padding: '0.35rem 0.75rem',
+                              borderRadius: '6px',
+                              fontSize: '0.8125rem',
+                              color: '#1e293b',
+                              marginTop: '0.5rem',
+                              fontWeight: 600
+                            }}>
+                              <span>🚌 Route:</span>
+                              <span style={{ color: '#047857' }}>{app.route_from}</span>
+                              <span>→</span>
+                              <span style={{ color: '#047857' }}>{app.route_to}</span>
+                              {app.distance_km && <span style={{ color: '#64748b' }}>({app.distance_km} km)</span>}
                             </div>
                             <ApplicationDocuments app={app} />
                           </div>
                           {rejectId === app.id ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', minWidth: '200px' }}>
-                              <input className="form-input" placeholder="Reason for rejection" value={rejectReason} onChange={e => setRejectReason(e.target.value)} autoFocus />
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: '260px' }}>
+                              <input className="form-input" placeholder="Enter reason for rejection..." value={rejectReason} onChange={e => setRejectReason(e.target.value)} autoFocus />
                               <div style={{ display: 'flex', gap: '0.375rem' }}>
                                 <button className="btn btn--danger btn--sm btn--full" onClick={() => rejectApp(app.id, rejectReason)} disabled={actionLoading === app.id}>
                                   {actionLoading === app.id ? <span className="spinner" /> : 'Confirm Reject'}
@@ -361,23 +395,39 @@ export default function AdminDashboard() {
                               </div>
                             </div>
                           ) : (
-                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <div style={{ display: 'flex', gap: '0.625rem', alignItems: 'center' }}>
                               <button
                                 className="btn btn--success btn--sm"
                                 onClick={() => approveApp(app.id)}
                                 disabled={actionLoading === app.id}
                                 id={`admin-approve-${app.id}`}
+                                style={{ padding: '0.55rem 1.1rem', fontSize: '0.875rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
                               >
-                                {actionLoading === app.id ? <span className="spinner" /> : 'Issue Pass'}
+                                {actionLoading === app.id ? <span className="spinner" /> : <><span>✓</span> Issue Digital Pass</>}
                               </button>
-                              <button className="btn btn--outline btn--sm" onClick={() => setRejectId(app.id)} id={`admin-reject-${app.id}`}>Reject</button>
+                              <button
+                                className="btn btn--outline btn--sm"
+                                onClick={() => setRejectId(app.id)}
+                                id={`admin-reject-${app.id}`}
+                                style={{ padding: '0.55rem 0.9rem', fontSize: '0.875rem', color: '#dc2626', borderColor: '#fca5a5' }}
+                              >
+                                ✕ Reject
+                              </button>
                             </div>
                           )}
                         </div>
                       </div>
                     ))}
                   </div>
-                </>
+                </div>
+              ) : (
+                <div className="card" style={{ padding: '2rem', textAlign: 'center', marginBottom: '2rem', background: '#f8fafc', border: '1px dashed #cbd5e1' }}>
+                  <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>✅</div>
+                  <div style={{ fontWeight: 700, color: 'var(--text)', fontSize: '1rem' }}>No Applications Awaiting Action</div>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                    All verified student applications have been processed. When institutions approve newly submitted student applications, they will appear here for KSRTC digital credential issuance.
+                  </div>
+                </div>
               )}
 
               {/* All other applications */}

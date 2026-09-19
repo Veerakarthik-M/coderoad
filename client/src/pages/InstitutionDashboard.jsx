@@ -797,7 +797,7 @@ export default function InstitutionDashboard() {
 
         <div className="tab-nav" role="tablist">
           {[
-            { id: 'applications', label: 'Applications' + (stats?.pending ? ` (${stats.pending})` : '') },
+            { id: 'applications', label: 'Applications', count: stats?.pending, countType: 'amber', countText: `${stats?.pending || 0} pending` },
             { id: 'programmes', label: 'Programme Details' },
             { id: 'students', label: 'Students' },
             { id: 'logs', label: 'Verification Logs' },
@@ -810,7 +810,12 @@ export default function InstitutionDashboard() {
               aria-selected={tab === t.id}
               id={`tab-${t.id}`}
             >
-              {t.label}
+              <span>{t.label}</span>
+              {t.count > 0 && (
+                <span className={`tab-badge tab-badge--${t.countType}`}>
+                  {t.countText}
+                </span>
+              )}
             </button>
           ))}
         </div>

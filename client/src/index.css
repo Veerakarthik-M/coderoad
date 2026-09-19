@@ -767,3 +767,76 @@ textarea.form-input{resize:vertical;min-height:80px}
 .btn--success:hover { background: #047857; }
 .btn--danger { background: #dc2626; color: white; border-color: #dc2626; }
 .btn--danger:hover { background: #b91c1c; }
+
+/* ── Professional Segmented Navigation Tabs ── */
+.tab-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #f1f5f9;
+  padding: 0.35rem;
+  border-radius: var(--radius-xl);
+  border: 1px solid #e2e8f0;
+  margin-bottom: 1.5rem;
+  max-width: 100%;
+  overflow-x: auto;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.tab-nav__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.125rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+}
+
+.tab-nav__item:hover {
+  color: var(--blue-900);
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.tab-nav__item--active {
+  background: #ffffff;
+  color: var(--blue-900);
+  font-weight: 700;
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.06);
+}
+
+.tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  line-height: 1.1;
+}
+
+.tab-badge--amber {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.tab-badge--green {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.tab-badge--neutral {
+  background: #e2e8f0;
+  color: #334155;
+}
