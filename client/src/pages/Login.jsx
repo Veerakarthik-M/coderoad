@@ -55,7 +55,11 @@ export default function Login({ portal: propPortal, onAuth }) {
   return (
     <div className="login-shell">
       <div className="login-left">
-        <img src="/ksrtc-bus.jpg" alt="KSRTC Bus" className="login-left__bg" />
+        <img 
+          src={isInstitution ? "/inst_bg.jpg" : isKsrtc ? "/ksrtc_bg.jpg" : "/student_bg.jpg"} 
+          alt="KSRTC Background" 
+          className="login-left__bg" 
+        />
         <div className="login-left__overlay"></div>
         <div className="login-left__content">
           <h2 className="login-left__quote">

@@ -12,6 +12,8 @@ import InstitutionRegister from './pages/InstitutionRegister';
 import InstitutionDashboard from './pages/InstitutionDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import ConductorVerifier from './pages/ConductorVerifier';
+import Downloads from './pages/Downloads';
+import About from './pages/About';
 import './index.css';
 
 function ProtectedRoute({ children, role }) {
@@ -22,12 +24,19 @@ function ProtectedRoute({ children, role }) {
 }
 
 function AppShell({ user, onLogout }) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   if (!user) return <Outlet />;
   
   return (
     <div className="app-shell">
-      <div className="app-shell__sidebar">
-        <Sidebar user={user} onLogout={onLogout} />
+      <div className="app-shell__mobile-header">
+        <button className="mobile-menu-btn" onClick={() => setSidebarOpen(true)}>☰ Menu</button>
+      </div>
+      <div className={`app-shell__sidebar ${sidebarOpen ? 'app-shell__sidebar--open' : ''}`}>
+        {sidebarOpen && <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)}></div>}
+        <div className="sidebar-content-wrapper" onClick={() => setSidebarOpen(false)}>
+          <Sidebar user={user} onLogout={onLogout} />
+        </div>
       </div>
       <div className="app-shell__main">
         <div className="app-shell__content">
@@ -62,6 +71,8 @@ export default function App() {
         <Route path="/login/ksrtc" element={<Login portal="ksrtc" onAuth={handleAuth} />} />
         <Route path="/register/student" element={<StudentRegister onAuth={handleAuth} />} />
         <Route path="/register/institution" element={<InstitutionRegister onAuth={handleAuth} />} />
+        <Route path="/downloads" element={<Downloads />} />
+        <Route path="/about" element={<About />} />
         
         {/* App Shell for Dashboards */}
         <Route element={<AppShell user={user} onLogout={handleLogout} />}>

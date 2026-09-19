@@ -13,7 +13,10 @@ let privateKey = null;
 
 async function getPrivateKey() {
   if (!privateKey) {
-    const pem = readFileSync(join(__dirname, '..', 'keys', 'private.pem'), 'utf-8');
+    const pem = process.env.PRIVATE_KEY_PEM;
+    if (!pem) {
+      throw new Error('FATAL: PRIVATE_KEY_PEM environment variable is not set');
+    }
     privateKey = await importPKCS8(pem, 'ES256');
   }
   return privateKey;

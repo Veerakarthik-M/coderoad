@@ -51,13 +51,7 @@ function HeroLoginPanel({ onAuth }) {
       <div className="hero-login-panel__body">
         {error && <div className="alert alert--error" style={{ marginBottom: '1rem', fontSize: '0.8rem' }}>{error}</div>}
         <form onSubmit={handleSubmit} noValidate>
-          <div className="form-group" style={{ marginBottom: '0.75rem' }}>
-            <label className="form-label" style={{ fontSize: '0.8125rem' }}>Student Type</label>
-            <select className="form-input" style={{ fontSize: '0.875rem' }}>
-              <option>College Student</option>
-              <option>School Student</option>
-            </select>
-          </div>
+
           <div className="form-group" style={{ marginBottom: '0.75rem' }}>
             <label className="form-label" htmlFor="hero-email" style={{ fontSize: '0.8125rem' }}>Email / Username</label>
             <input id="hero-email" type="text" className="form-input" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" style={{ fontSize: '0.875rem' }} required />
@@ -66,7 +60,7 @@ function HeroLoginPanel({ onAuth }) {
             <label className="form-label" htmlFor="hero-password" style={{ fontSize: '0.8125rem' }}>Password</label>
             <input id="hero-password" type="password" className="form-input" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" style={{ fontSize: '0.875rem' }} required />
           </div>
-          <a href="#" style={{ fontSize: '0.8rem', color: 'var(--blue-600)', display: 'block', marginBottom: '1rem' }}>Forgot password?</a>
+          <button type="button" onClick={(e) => e.preventDefault()} style={{ fontSize: '0.8rem', color: 'var(--blue-600)', display: 'block', marginBottom: '1rem', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>Forgot password?</button>
           <button type="submit" className="hero-login-panel__submit" id="hero-signin" disabled={loading}>
             {loading ? 'Signing in...' : 'SIGN IN'}
           </button>
@@ -88,23 +82,10 @@ export default function Landing({ user, onAuth }) {
         <div className="container" style={{ position: 'relative', zIndex: 2, paddingTop: '2.5rem', paddingBottom: '2.5rem' }}>
           <div className="landing-hero__two-col">
             <div className="landing-hero__left">
-              <div id="downloads">
-                <div className="hero-action-row">
-                  <span className="hero-action-row__label">📄 Form 26 — Student Concession Application</span>
-                  <a href="/forms/form-26-concession.html" target="_blank" rel="noopener" className="hero-action-row__btn">Download</a>
-                </div>
-                <div className="hero-action-row">
-                  <span className="hero-action-row__label">📋 Instructions &amp; Eligibility Guide</span>
-                  <a href="/forms/instructions.html" target="_blank" rel="noopener" className="hero-action-row__btn">Download</a>
-                </div>
-                <div className="hero-action-row">
-                  <span className="hero-action-row__label">🏫 Institution Registration Form</span>
-                  <a href="/forms/institution-registration.html" target="_blank" rel="noopener" className="hero-action-row__btn">Download</a>
-                </div>
-                <div className="hero-action-row">
-                  <span className="hero-action-row__label">🔄 Pass Renewal Application Form</span>
-                  <a href="/forms/form-26-concession.html" target="_blank" rel="noopener" className="hero-action-row__btn">Download</a>
-                </div>
+              <div className="hero-action-group">
+                <h3 className="hero-action-group__title">Quick Links</h3>
+                <Link to="/downloads" className="hero-cta-btn hero-cta-btn--orange">Forms & Downloads</Link>
+                <Link to="/about" className="hero-cta-btn hero-cta-btn--teal">About Portal</Link>
               </div>
               <div className="hero-action-group">
                 <h3 className="hero-action-group__title">Apply For New Student Concession</h3>
@@ -137,14 +118,7 @@ export default function Landing({ user, onAuth }) {
         </div>
       </section>
 
-      <section id="about" style={{ padding: '4rem 2rem', background: '#f9fafb', textAlign: 'center' }}>
-        <div className="container">
-          <h2 style={{ fontSize: '2rem', color: '#064e3b', marginBottom: '1rem' }}>About Portal</h2>
-          <p style={{ maxWidth: '800px', margin: '0 auto', color: '#4b5563', lineHeight: 1.6 }}>
-            The ANAVANDI Student Concession Portal is an initiative by the Kerala State Road Transport Corporation (KSRTC) to digitize and streamline the issuance of student concession passes. It allows students to apply online, institutions to verify enrollment, and conductors to validate digital passes seamlessly.
-          </p>
-        </div>
-      </section>
+
 
       <section id="contact" style={{ padding: '4rem 2rem', background: '#ffffff', textAlign: 'center' }}>
         <div className="container">

@@ -438,7 +438,7 @@ export default function StudentRegister({ onAuth }) {
     || form.studentType === 'school';
 
   return (
-    <div className="register-shell">
+    <div className="register-shell register-shell--student">
       <div className="register-container">
         <div className="register-header" style={{ position: 'relative' }}>
           <div style={{ position: 'absolute', top: 0, left: 0 }}>

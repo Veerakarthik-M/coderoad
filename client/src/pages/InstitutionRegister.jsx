@@ -94,7 +94,7 @@ export default function InstitutionRegister({ onAuth }) {
   };
 
   return (
-    <div className="register-shell">
+    <div className="register-shell register-shell--institution">
       <div className="register-container">
         <div className="register-header" style={{ textAlign: 'center' }}>
           <h1 className="page-title">Institution Registration</h1>

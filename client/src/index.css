@@ -616,6 +616,8 @@ textarea.form-input{resize:vertical;min-height:80px}
 
 .register-shell{min-height:100vh;background-color:var(--bg-subtle);position:relative}
 .register-shell::before{content:'';position:absolute;inset:0;background:url('/ksrtc-bus.jpg') center/cover fixed;opacity:0.04;pointer-events:none;z-index:0}
+.register-shell--student::before{background-image:url('/student_bg.jpg')}
+.register-shell--institution::before{background-image:url('/inst_bg.jpg')}
 .register-container{max-width:720px;margin:0 auto;padding:2rem 1rem;position:relative;z-index:1}
 .register-header{text-align:center;margin-bottom:2rem}
 .register-header__title{font-size:1.5rem;font-weight:800;color:var(--text)}
@@ -627,7 +629,6 @@ textarea.form-input{resize:vertical;min-height:80px}
 
 @media(min-width:768px){.login-left{display:flex}}
 @media(max-width:900px){
-  .app-shell__sidebar{display:none}
   .problem-solution{grid-template-columns:1fr}
 }
 @media(max-width:640px){
@@ -669,10 +670,47 @@ textarea.form-input{resize:vertical;min-height:80px}
 
 /* ── Comprehensive Mobile Responsive ── */
 @media (max-width: 900px) {
-  .app-shell__sidebar { display: none; }
+  .app-shell__sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 1000;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease-in-out;
+    background: var(--blue-900);
+  }
+  .app-shell__sidebar--open {
+    transform: translateX(0);
+  }
+  .sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 999;
+  }
+  .app-shell__mobile-header {
+    display: flex;
+    align-items: center;
+    background: var(--nav-bg);
+    padding: 0.75rem 1rem;
+    color: white;
+    position: sticky;
+    top: 0;
+    z-index: 99;
+  }
+  .mobile-menu-btn {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 1.25rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
   .problem-solution { grid-template-columns: 1fr; }
   .app-shell__content { padding: 1rem; }
 }
+.app-shell__mobile-header { display: none; }
 
 /* Landing hero two-column → single column on mobile */
 .landing-hero__two-col {
