@@ -725,6 +725,20 @@ export default function InstitutionDashboard() {
           </div>
         </div>
 
+        {stats?.institution?.status === 'pending_ksrtc_verification' && (
+          <div className="alert alert--warning" style={{ marginBottom: '1.5rem', display: 'flex', gap: '0.75rem', alignItems: 'center', background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', padding: '1rem 1.25rem', borderRadius: '8px' }}>
+            <span style={{ fontSize: '1.75rem' }}>📞</span>
+            <div>
+              <strong style={{ fontSize: '1rem', color: '#78350f', display: 'block', marginBottom: '0.2rem' }}>
+                Pending KSRTC Institutional Verification
+              </strong>
+              <div style={{ fontSize: '0.85rem', lineHeight: 1.4 }}>
+                Your institution registration has been submitted to KSRTC. In accordance with Kerala transport guidelines, a KSRTC depot official will call the Head of Institution to verify accreditation and student rolls. You may set up programmes and view student records in the meantime.
+              </div>
+            </div>
+          </div>
+        )}
+
         {stats && (
           <div className="stats-grid">
             {[

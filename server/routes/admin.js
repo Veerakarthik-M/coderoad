@@ -1,4 +1,4 @@
-﻿// Admin routes â€” KSRTC admin: final approval, credential issuance, revocation
+// Admin routes â€” KSRTC admin: final approval, credential issuance, revocation
 import { Router } from 'express';
 import { authMiddleware, requireRole } from './auth.js';
 import { queryOne, queryAll, execute, saveDb } from '../db.js';
@@ -151,7 +151,7 @@ router.post('/revoke/:credentialId', authMiddleware, requireRole('admin'), (req,
   }
 });
 
-// GET /api/admin/stats â€” dashboard statistics
+// GET /api/admin/stats — dashboard statistics
 router.get('/stats', authMiddleware, requireRole('admin'), (req, res) => {
   try {
     const total = queryOne('SELECT COUNT(*) as count FROM applications');
@@ -161,6 +161,8 @@ router.get('/stats', authMiddleware, requireRole('admin'), (req, res) => {
     const rejected = queryOne("SELECT COUNT(*) as count FROM applications WHERE status = 'rejected'");
     const revoked = queryOne('SELECT COUNT(*) as count FROM credentials WHERE revoked = 1');
     const active = queryOne('SELECT COUNT(*) as count FROM credentials WHERE revoked = 0');
+    const pendingInstitutions = queryOne("SELECT COUNT(*) as count FROM institutions WHERE status = 'pending_ksrtc_verification'");
+    const totalInstitutions = queryOne('SELECT COUNT(*) as count FROM institutions');
 
     res.json({
       total: total.count,
@@ -169,7 +171,9 @@ router.get('/stats', authMiddleware, requireRole('admin'), (req, res) => {
       issued: issued.count,
       rejected: rejected.count,
       revokedCredentials: revoked.count,
-      activeCredentials: active.count
+      activeCredentials: active.count,
+      pendingInstitutions: pendingInstitutions ? pendingInstitutions.count : 0,
+      totalInstitutions: totalInstitutions ? totalInstitutions.count : 0
     });
   } catch (err) {
     console.error('Stats error:', err);
@@ -177,7 +181,89 @@ router.get('/stats', authMiddleware, requireRole('admin'), (req, res) => {
   }
 });
 
-// GET /api/admin/credentials â€” list all issued credentials
+// GET /api/admin/institutions — get all registered institutions with verification status & contact info
+router.get('/institutions', authMiddleware, requireRole('admin'), (req, res) => {
+  try {
+    const institutions = queryAll(
+      `SELECT i.*, u.name as admin_name, u.email as admin_email, u.phone as contact_phone,
+       (SELECT COUNT(*) FROM applications WHERE institution_id = i.id) as total_students,
+       (SELECT COUNT(*) FROM applications WHERE institution_id = i.id AND status = 'inst_approved') as pending_passes
+       FROM institutions i
+       JOIN users u ON i.user_id = u.id
+       ORDER BY 
+         CASE COALESCE(i.status, 'verified')
+           WHEN 'pending_ksrtc_verification' THEN 1
+           WHEN 'verified' THEN 2
+           WHEN 'rejected' THEN 3
+           ELSE 4
+         END,
+         i.created_at DESC`
+    );
+    res.json({ institutions });
+  } catch (err) {
+    console.error('Admin get institutions error:', err);
+    res.status(500).json({ error: 'Failed to fetch institutions' });
+  }
+});
+
+// POST /api/admin/institutions/:id/verify — verify institution after phone verification with Principal
+router.post('/institutions/:id/verify', authMiddleware, requireRole('admin'), (req, res) => {
+  try {
+    const { notes } = req.body;
+    const inst = queryOne('SELECT * FROM institutions WHERE id = ?', [req.params.id]);
+    if (!inst) {
+      return res.status(404).json({ error: 'Institution not found' });
+    }
+
+    const verifierName = req.user.name || 'KSRTC Depot Officer';
+    const verifyNotes = notes || 'Verified via official telephone inquiry with Head of Institution';
+
+    execute(
+      `UPDATE institutions 
+       SET status = 'verified', 
+           verification_notes = ?, 
+           verified_by = ?, 
+           verified_at = datetime('now') 
+       WHERE id = ?`,
+      [verifyNotes, verifierName, req.params.id]
+    );
+    saveDb();
+
+    res.json({ message: 'Institution verified and approved successfully', id: req.params.id });
+  } catch (err) {
+    console.error('Admin verify institution error:', err);
+    res.status(500).json({ error: 'Verification failed' });
+  }
+});
+
+// POST /api/admin/institutions/:id/reject — reject institution registration
+router.post('/institutions/:id/reject', authMiddleware, requireRole('admin'), (req, res) => {
+  try {
+    const { reason } = req.body;
+    const inst = queryOne('SELECT * FROM institutions WHERE id = ?', [req.params.id]);
+    if (!inst) {
+      return res.status(404).json({ error: 'Institution not found' });
+    }
+
+    execute(
+      `UPDATE institutions 
+       SET status = 'rejected', 
+           verification_notes = ?, 
+           verified_by = ?, 
+           verified_at = datetime('now') 
+       WHERE id = ?`,
+      [reason || 'Institution credentials could not be verified by KSRTC', req.user.name || 'KSRTC Officer', req.params.id]
+    );
+    saveDb();
+
+    res.json({ message: 'Institution registration rejected', id: req.params.id });
+  } catch (err) {
+    console.error('Admin reject institution error:', err);
+    res.status(500).json({ error: 'Rejection failed' });
+  }
+});
+
+// GET /api/admin/credentials — list all issued credentials
 router.get('/credentials', authMiddleware, requireRole('admin'), (req, res) => {
   try {
     const credentials = queryAll(
@@ -207,12 +293,6 @@ router.delete('/reset-database', authMiddleware, requireRole('admin'), async (re
     ex('DELETE FROM institutions');
     ex('DELETE FROM users');
     sd();
-    const { seedIfEmpty } = await import('../seed.js');
-    // Force re-seed
-    const { queryOne: qo } = await import('../db.js');
-    await import('../seed.js').then(m => m.seedIfEmpty && null);
-    // manual re-seed
-    const bcrypt = (await import('bcryptjs')).default;
     res.json({ message: 'Database cleared. Restart the server to re-seed, or call /api/admin/force-seed' });
   } catch (err) {
     console.error('Reset error:', err);

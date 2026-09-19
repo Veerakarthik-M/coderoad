@@ -285,36 +285,6 @@ textarea.form-input{resize:vertical;min-height:80px}
 
 .offline-queue{display:grid;gap:.5rem}
 .offline-item{display:flex;align-items:center;gap:.75rem;padding:.75rem;background:var(--gray-50);border-radius:var(--radius);font-size:.8125rem}
-.offline-item__dot{width:8px;height:8px;border-radius:50%;background:var(--yellow-600);flex-shrink:0}
-.offline-item__info{flex:1}
-.offline-item__name{font-weight:600;color:var(--text)}
-.offline-item__meta{color:var(--text-muted);font-size:.75rem}
-
-/* ── Official Nav ─────────────────────────────────── */
-.official-nav{background:var(--blue-900);position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.25)}
-.official-nav__topbar{padding:.625rem 0;border-bottom:1px solid rgba(255,255,255,.1)}
-.official-nav__inner{max-width:1200px;margin:0 auto;padding:0 1.5rem;display:flex;align-items:center;gap:1rem}
-.official-nav__brand{display:flex;align-items:center;gap:.75rem;text-decoration:none}
-.official-nav__emblem{flex-shrink:0}
-.official-nav__brand-text{display:flex;flex-direction:column}
-.official-nav__brand-name{font-size:1.125rem;font-weight:900;color:white;line-height:1.1;letter-spacing:.02em}
-.official-nav__brand-sub{font-size:.65rem;color:rgba(255,255,255,.55);font-weight:500;letter-spacing:.03em;margin-top:1px}
-.official-nav__spacer{flex:1}
-.official-nav__login-btns{display:flex;gap:.5rem;flex-wrap:wrap}
-.official-nav__login-btn{display:inline-flex;align-items:center;gap:.375rem;padding:.45rem 1rem;border-radius:4px;font-size:.8125rem;font-weight:700;text-decoration:none;transition:opacity .15s,transform .1s;white-space:nowrap}
-.official-nav__login-btn:active{transform:scale(.97)}
-.official-nav__login-btn--secondary{background:rgba(255,255,255,.15);color:white;border:1px solid rgba(255,255,255,.25)}
-.official-nav__login-btn--secondary:hover{background:rgba(255,255,255,.25)}
-.official-nav__login-btn--primary{background:#0d9488;color:white;border:1px solid #0f766e}
-.official-nav__login-btn--primary:hover{background:#0f766e}
-.official-nav__links-bar{padding:.35rem 0;background:rgba(0,0,0,.15)}
-.official-nav__links{display:flex;align-items:center;gap:.25rem}
-.official-nav__link{color:rgba(255,255,255,.8);font-size:.8125rem;font-weight:500;padding:.35rem .875rem;border-radius:3px;text-decoration:none;transition:color .15s,background .15s}
-.official-nav__link:hover{color:white;background:rgba(255,255,255,.1)}
-
-/* ── Landing Hero ─────────────────────────────────── */
-.landing-hero{position:relative;min-height:560px;display:flex;align-items:center;background:var(--blue-900);overflow:hidden}
-.landing-hero__bg{position:absolute;inset:0;object-fit:cover;width:100%;height:100%;opacity:.7}
 .landing-hero__overlay{position:absolute;inset:0;background:linear-gradient(100deg,rgba(6,78,59,.92) 0%,rgba(6,78,59,.75) 50%,rgba(6,78,59,.4) 100%)}
 .landing-hero__two-col{display:grid;grid-template-columns:1fr 380px;gap:3rem;align-items:start}
 .landing-hero__left{display:flex;flex-direction:column;gap:.75rem;padding-top:.5rem}
@@ -473,32 +443,40 @@ textarea.form-input{resize:vertical;min-height:80px}
 .offline-item__meta{color:var(--text-muted);font-size:.75rem}
 
 /* ── Official Nav ─────────────────────────────────── */
-.official-nav{background:var(--blue-900);position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.25)}
-.official-nav__topbar{padding:.625rem 0;border-bottom:1px solid rgba(255,255,255,.1)}
-.official-nav__inner{max-width:1200px;margin:0 auto;padding:0 1.5rem;display:flex;align-items:center;gap:1rem}
-.official-nav__brand{display:flex;align-items:center;gap:.75rem;text-decoration:none}
+.official-nav{background:var(--blue-900, #064e3b);position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.official-nav__topbar{padding:.5rem 0;border-bottom:1px solid rgba(255,255,255,.1)}
+.official-nav__inner{max-width:1200px;margin:0 auto;padding:0 1rem;display:flex;align-items:center;gap:.75rem}
+.official-nav__brand{display:flex;align-items:center;gap:.5rem;text-decoration:none;flex-shrink:0}
 .official-nav__emblem{flex-shrink:0}
 .official-nav__brand-text{display:flex;flex-direction:column}
 .official-nav__brand-name{font-size:1.125rem;font-weight:900;color:white;line-height:1.1;letter-spacing:.02em}
-.official-nav__brand-sub{font-size:.65rem;color:rgba(255,255,255,.55);font-weight:500;letter-spacing:.03em;margin-top:1px}
+.official-nav__brand-sub{font-size:.65rem;color:rgba(255,255,255,.65);font-weight:500;letter-spacing:.02em;margin-top:1px}
 .official-nav__spacer{flex:1}
-.official-nav__login-btns{display:flex;gap:.5rem;flex-wrap:wrap}
-.official-nav__login-btn{display:inline-flex;align-items:center;gap:.375rem;padding:.45rem 1rem;border-radius:4px;font-size:.8125rem;font-weight:700;text-decoration:none;transition:opacity .15s,transform .1s;white-space:nowrap}
+.official-nav__login-btns{display:flex;gap:.35rem;align-items:center;flex-wrap:nowrap;flex-shrink:0}
+.official-nav__login-btn{display:inline-flex;align-items:center;gap:.25rem;padding:.35rem .75rem;border-radius:4px;font-size:.8rem;font-weight:700;text-decoration:none;transition:opacity .15s,transform .1s;white-space:nowrap}
 .official-nav__login-btn:active{transform:scale(.97)}
-.official-nav__login-btn--secondary{background:rgba(255,255,255,.15);color:white;border:1px solid rgba(255,255,255,.25)}
+.official-nav__login-btn--secondary{background:rgba(255,255,255,.15);color:white;border:1px solid rgba(255,255,255,.3)}
 .official-nav__login-btn--secondary:hover{background:rgba(255,255,255,.25)}
 .official-nav__login-btn--primary{background:#0d9488;color:white;border:1px solid #0f766e}
 .official-nav__login-btn--primary:hover{background:#0f766e}
-.official-nav__links-bar{padding:.35rem 0;background:rgba(0,0,0,.15)}
-.official-nav__links{display:flex;align-items:center;gap:.25rem}
-.official-nav__link{color:rgba(255,255,255,.8);font-size:.8125rem;font-weight:500;padding:.35rem .875rem;border-radius:3px;text-decoration:none;transition:color .15s,background .15s}
-.official-nav__link:hover{color:white;background:rgba(255,255,255,.1)}
-@media (max-width: 768px) {
-  .official-nav__brand-sub { display: none; }
-  .official-nav__login-btns { display: none; }
-  .official-nav__links { gap: 0.5rem; overflow-x: auto; }
-  .official-nav__link { font-size: 0.75rem; padding: .35rem .5rem; }
-  .official-nav__brand-name { font-size: 1rem; }
+.login-btn-full{display:inline}
+.login-btn-short{display:none}
+
+.official-nav__links-bar{padding:.3rem 0;background:rgba(0,0,0,.18);overflow-x:auto;-webkit-overflow-scrolling:touch}
+.official-nav__links{display:flex;align-items:center;gap:.25rem;min-width:max-content}
+.official-nav__link{color:rgba(255,255,255,.85);font-size:.8125rem;font-weight:500;padding:.3rem .75rem;border-radius:3px;text-decoration:none;transition:color .15s,background .15s;white-space:nowrap}
+.official-nav__link:hover{color:white;background:rgba(255,255,255,.12)}
+
+@media (max-width: 640px) {
+  .official-nav__topbar{padding:.35rem 0}
+  .official-nav__inner{padding:0 .75rem;gap:.5rem}
+  .official-nav__brand-sub{display:none}
+  .official-nav__brand-name{font-size:.95rem}
+  .login-btn-full{display:none}
+  .login-btn-short{display:inline}
+  .official-nav__login-btn{padding:.25rem .45rem;font-size:.7rem;border-radius:4px}
+  .official-nav__links-bar{padding:.25rem 0}
+  .official-nav__link{font-size:.75rem;padding:.25rem .5rem}
 }
 
 /* ── Landing Hero ─────────────────────────────────── */
@@ -536,11 +514,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 @media(max-width:860px){
   .landing-hero__two-col{grid-template-columns:1fr}
   .landing-hero__right{order:-1}
-  .official-nav__login-btns{display:none}
 }
-.landing-hero__inner{position:relative;z-index:2;max-width:1200px;margin:0 auto;padding:4rem 1.5rem;width:100%}
-.landing-hero__eyebrow{display:flex;align-items:center;gap:.5rem;font-size:.8125rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.65);margin-bottom:1rem;flex-wrap:wrap}
-.landing-hero__eyebrow span{background:rgba(255,255,255,.12);padding:3px 10px;border-radius:4px}
 .landing-hero__title{font-size:clamp(1.75rem,4vw,2.75rem);font-weight:900;line-height:1.15;color:white;margin-bottom:1rem}
 .landing-hero__title em{color:#93c5fd;font-style:normal}
 .landing-hero__desc{font-size:1.0625rem;color:rgba(255,255,255,.8);line-height:1.7;max-width:600px;margin-bottom:1.5rem}

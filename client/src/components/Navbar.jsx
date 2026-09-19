@@ -40,15 +40,17 @@ export default function Navbar({ user }) {
           <div className="official-nav__login-btns">
             {user ? (
               <Link to={`/${user.role}`} className="official-nav__login-btn official-nav__login-btn--primary">
-                🏠 Go to Dashboard ({user.role.toUpperCase()})
+                🏠 Dashboard
               </Link>
             ) : (
               <>
-                <Link to="/login/institution" className="official-nav__login-btn official-nav__login-btn--secondary" id="nav-school-login">
-                  🔒 Institution Admin
+                <Link to="/login/institution" className="official-nav__login-btn official-nav__login-btn--secondary" id="nav-school-login" title="College & School Login">
+                  <span className="login-btn-full">🔒 Institution Admin</span>
+                  <span className="login-btn-short">🔒 College</span>
                 </Link>
-                <Link to="/login/ksrtc" className="official-nav__login-btn official-nav__login-btn--primary" id="nav-ksrtc-login">
-                  🔒 KSRTC / Conductor
+                <Link to="/login/ksrtc" className="official-nav__login-btn official-nav__login-btn--primary" id="nav-ksrtc-login" title="KSRTC & Conductor Login">
+                  <span className="login-btn-full">🔒 KSRTC / Conductor</span>
+                  <span className="login-btn-short">🔒 KSRTC</span>
                 </Link>
               </>
             )}

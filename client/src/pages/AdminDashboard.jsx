@@ -32,10 +32,20 @@ export default function AdminDashboard() {
   const [rejectReason, setRejectReason] = useState('');
   const [pageError, setPageError] = useState('');
 
+  const [institutions, setInstitutions] = useState([]);
+  const [instFilter, setInstFilter] = useState('all');
+  const [instSearch, setInstSearch] = useState('');
+  const [verifyModal, setVerifyModal] = useState(null);
+  const [verifyNotes, setVerifyNotes] = useState('');
+  const [rejectModal, setRejectModal] = useState(null);
+  const [rejectReasonInst, setRejectReasonInst] = useState('');
+  const [phoneConfirmed, setPhoneConfirmed] = useState(false);
+
   useEffect(() => { loadStats(); loadApplications(); }, []);
   useEffect(() => {
     if (tab === 'applications') loadApplications();
     else if (tab === 'credentials') loadCredentials();
+    else if (tab === 'institutions') loadInstitutions();
   }, [tab]);
 
   const loadStats = async () => {
@@ -55,6 +65,55 @@ export default function AdminDashboard() {
     try { const d = await api.get('/admin/credentials'); setCredentials(d.credentials || []); }
     catch (err) { setPageError('Could not load credentials: ' + err.message); }
     finally { setLoading(false); }
+  };
+
+  const loadInstitutions = async () => {
+    setLoading(true);
+    try {
+      const d = await api.get('/admin/institutions');
+      setInstitutions(d.institutions || []);
+    } catch (err) {
+      setPageError('Could not load institutions: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyInstitution = async (instId) => {
+    setActionLoading(instId);
+    try {
+      await api.post(`/admin/institutions/${instId}/verify`, {
+        notes: verifyNotes.trim() || 'Verified via official telephone inquiry with Head of Institution'
+      });
+      setAlert({ type: 'success', msg: 'Institution verified & approved successfully after telephone inquiry!' });
+      setVerifyModal(null);
+      setVerifyNotes('');
+      setPhoneConfirmed(false);
+      loadInstitutions();
+      loadStats();
+    } catch (err) {
+      setAlert({ type: 'error', msg: err.message });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleRejectInstitution = async (instId) => {
+    setActionLoading(instId);
+    try {
+      await api.post(`/admin/institutions/${instId}/reject`, {
+        reason: rejectReasonInst.trim() || 'Institution credentials could not be verified by KSRTC'
+      });
+      setAlert({ type: 'success', msg: 'Institution registration rejected.' });
+      setRejectModal(null);
+      setRejectReasonInst('');
+      loadInstitutions();
+      loadStats();
+    } catch (err) {
+      setAlert({ type: 'error', msg: err.message });
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   const approveApp = async (id) => {
@@ -119,9 +178,9 @@ export default function AdminDashboard() {
               { label: 'Total Applications', value: stats.total },
               { label: 'Awaiting KSRTC Approval', value: stats.instApproved },
               { label: 'Passes Issued', value: stats.issued },
+              { label: 'Colleges & Schools', value: stats.totalInstitutions || 0 },
+              { label: 'Colleges to Verify (Call)', value: stats.pendingInstitutions || 0 },
               { label: 'Active Credentials', value: stats.activeCredentials },
-              { label: 'Revoked', value: stats.revokedCredentials },
-              { label: 'Rejected', value: stats.rejected },
             ].map(s => (
               <div key={s.label} className="stat-card">
                 <div className="stat-card__value">{s.value}</div>
@@ -141,6 +200,7 @@ export default function AdminDashboard() {
         <div className="tab-nav" role="tablist">
           {[
             { id: 'applications', label: 'Applications' + (stats?.instApproved ? ` (${stats.instApproved} pending)` : '') },
+            { id: 'institutions', label: '🏫 Institutions' + (stats?.pendingInstitutions ? ` (${stats.pendingInstitutions} to call)` : '') },
             { id: 'credentials', label: 'Issued Credentials' },
           ].map(t => (
             <button
@@ -362,6 +422,340 @@ export default function AdminDashboard() {
               </div>
             </>
           )
+        )}
+
+        {/* INSTITUTIONS TAB (Colleges & Schools Verification) */}
+        {tab === 'institutions' && (
+          loading ? (
+            <div className="loading-page" style={{ paddingTop: '2rem' }}><span className="spinner" /> Loading institutions…</div>
+          ) : (
+            <div>
+              <div className="alert alert--info" style={{ marginBottom: '1.25rem', display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+                <span style={{ fontSize: '1.5rem' }}>📞</span>
+                <div>
+                  <strong style={{ display: 'block', marginBottom: '0.25rem', color: '#064e3b' }}>
+                    KSRTC Institutional Verification Protocol:
+                  </strong>
+                  Before an institution can approve concession applications, KSRTC Depot Officials must call the Head of Institution (Principal / Headmaster) at their registered official number to verify university affiliation and legitimacy.
+                </div>
+              </div>
+
+              {/* Filter and Search */}
+              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.25rem', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  {[
+                    { id: 'all', label: `All (${institutions.length})` },
+                    { id: 'pending', label: `⏳ Pending Verification (${institutions.filter(i => i.status === 'pending_ksrtc_verification').length})` },
+                    { id: 'verified', label: `✅ Verified (${institutions.filter(i => i.status !== 'pending_ksrtc_verification' && i.status !== 'rejected').length})` },
+                  ].map(f => (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={() => setInstFilter(f.id)}
+                      className={`btn btn--sm ${instFilter === f.id ? 'btn--primary' : 'btn--outline'}`}
+                      style={{ fontSize: '0.8rem', padding: '0.35rem 0.75rem' }}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div style={{ minWidth: '260px', flex: 1, maxWidth: '400px' }}>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="Search by college, place, head or phone..."
+                    value={instSearch}
+                    onChange={e => setInstSearch(e.target.value)}
+                    style={{ fontSize: '0.85rem', padding: '0.4rem 0.75rem' }}
+                  />
+                </div>
+              </div>
+
+              {/* Institutions List */}
+              {(() => {
+                const filtered = institutions.filter(i => {
+                  if (instFilter === 'pending' && i.status !== 'pending_ksrtc_verification') return false;
+                  if (instFilter === 'verified' && (i.status === 'pending_ksrtc_verification' || i.status === 'rejected')) return false;
+                  if (!instSearch.trim()) return true;
+                  const q = instSearch.toLowerCase();
+                  return (
+                    (i.name || '').toLowerCase().includes(q) ||
+                    (i.place || '').toLowerCase().includes(q) ||
+                    (i.district || '').toLowerCase().includes(q) ||
+                    (i.head_name || '').toLowerCase().includes(q) ||
+                    (i.contact_phone || '').toLowerCase().includes(q) ||
+                    (i.admin_email || '').toLowerCase().includes(q)
+                  );
+                });
+
+                if (filtered.length === 0) {
+                  return (
+                    <div className="card" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                      🏛️ No institutions found matching the current filter.
+                    </div>
+                  );
+                }
+
+                return (
+                  <div style={{ display: 'grid', gap: '1rem' }}>
+                    {filtered.map(inst => {
+                      const isPending = inst.status === 'pending_ksrtc_verification';
+                      const isRejected = inst.status === 'rejected';
+
+                      return (
+                        <div
+                          key={inst.id}
+                          className="card"
+                          style={{
+                            borderLeft: `5px solid ${isPending ? '#f59e0b' : isRejected ? '#dc2626' : '#10b981'}`,
+                            padding: '1.25rem',
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                            <div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text)', margin: 0 }}>
+                                  {inst.name}
+                                </h3>
+                                <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: '999px', background: '#f3f4f6', fontWeight: 700, color: '#4b5563' }}>
+                                  {inst.education_level || 'Higher Education'} · {inst.institution_type || 'Institution'}
+                                </span>
+                              </div>
+                              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                                📍 {inst.place}{inst.district ? `, ${inst.district}` : ''} {inst.pincode ? `— PIN: ${inst.pincode}` : ''}
+                              </div>
+                            </div>
+
+                            <div>
+                              {isPending ? (
+                                <span className="badge badge--pending" style={{ background: '#fef3c7', color: '#92400e', border: '1px solid #f59e0b', fontWeight: 800, padding: '0.35rem 0.75rem' }}>
+                                  ⏳ Awaiting KSRTC Call Verification
+                                </span>
+                              ) : isRejected ? (
+                                <span className="badge badge--rejected" style={{ padding: '0.35rem 0.75rem' }}>
+                                  ❌ Rejected
+                                </span>
+                              ) : (
+                                <span className="badge badge--active" style={{ background: '#d1fae5', color: '#065f46', border: '1px solid #10b981', fontWeight: 800, padding: '0.35rem 0.75rem' }}>
+                                  ✅ Verified & Active on Portal
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem', background: '#f9fafb', padding: '0.75rem 1rem', borderRadius: '6px', fontSize: '0.825rem', marginBottom: '1rem' }}>
+                            <div>
+                              <span style={{ color: '#6b7280', display: 'block', fontSize: '0.72rem' }}>Head of Institution (Principal)</span>
+                              <strong style={{ color: '#111827' }}>{inst.head_name || '—'}</strong>
+                            </div>
+                            <div>
+                              <span style={{ color: '#6b7280', display: 'block', fontSize: '0.72rem' }}>Official Contact Number</span>
+                              {inst.contact_phone ? (
+                                <a
+                                  href={`tel:${inst.contact_phone}`}
+                                  style={{ color: '#047857', fontWeight: 800, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
+                                >
+                                  📞 {inst.contact_phone}
+                                </a>
+                              ) : (
+                                <span style={{ color: '#9ca3af' }}>Not provided</span>
+                              )}
+                            </div>
+                            <div>
+                              <span style={{ color: '#6b7280', display: 'block', fontSize: '0.72rem' }}>University Affiliation</span>
+                              <strong style={{ color: '#111827' }}>{inst.affiliation_university || 'State Board / Directorate'}</strong>
+                              {inst.affiliation_number && <span style={{ color: '#6b7280', fontSize: '0.72rem', display: 'block' }}>Reg: {inst.affiliation_number}</span>}
+                            </div>
+                            <div>
+                              <span style={{ color: '#6b7280', display: 'block', fontSize: '0.72rem' }}>Portal Administrator</span>
+                              <span style={{ color: '#111827', fontWeight: 600 }}>{inst.admin_name || 'Admin'}</span>
+                              <span style={{ color: '#6b7280', fontSize: '0.72rem', display: 'block' }}>{inst.admin_email}</span>
+                            </div>
+                          </div>
+
+                          {inst.verification_notes && (
+                            <div style={{ fontSize: '0.78rem', color: '#4b5563', marginBottom: '0.75rem', background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '0.4rem 0.75rem', borderRadius: '4px' }}>
+                              📝 <strong>Verification Record:</strong> {inst.verification_notes} {inst.verified_by ? `(by ${inst.verified_by})` : ''}
+                            </div>
+                          )}
+
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                              Registered on: {fmtDate(inst.created_at)}
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                              {inst.contact_phone && (
+                                <a
+                                  href={`tel:${inst.contact_phone}`}
+                                  className="btn btn--outline btn--sm"
+                                  style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', borderColor: '#059669', color: '#059669', fontWeight: 700 }}
+                                >
+                                  📞 Call College
+                                </a>
+                              )}
+
+                              {isPending && (
+                                <>
+                                  <button
+                                    className="btn btn--sm"
+                                    style={{ background: '#059669', color: '#ffffff', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
+                                    onClick={() => {
+                                      setVerifyModal(inst);
+                                      setVerifyNotes(`Verified telephone inquiry with Principal ${inst.head_name || ''} at ${inst.contact_phone || ''}`);
+                                      setPhoneConfirmed(false);
+                                    }}
+                                  >
+                                    ✅ Verify & Approve
+                                  </button>
+                                  <button
+                                    className="btn btn--danger btn--sm"
+                                    onClick={() => {
+                                      setRejectModal(inst);
+                                      setRejectReasonInst('');
+                                    }}
+                                  >
+                                    ❌ Reject
+                                  </button>
+                                </>
+                              )}
+
+                              {!isPending && !isRejected && (
+                                <button
+                                  className="btn btn--ghost btn--sm"
+                                  onClick={() => {
+                                    setVerifyModal(inst);
+                                    setVerifyNotes(inst.verification_notes || 'Re-verified institution affiliation');
+                                    setPhoneConfirmed(true);
+                                  }}
+                                >
+                                  Update Notes
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </div>
+          )
+        )}
+
+        {/* VERIFICATION MODAL */}
+        {verifyModal && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+            <div className="card" style={{ maxWidth: '540px', width: '100%', background: '#fff', borderRadius: '12px', padding: '1.5rem', boxShadow: '0 20px 60px rgba(0,0,0,0.25)' }}>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#064e3b', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span>📞</span> Verify Institution by Phone Call
+              </h3>
+              <p style={{ fontSize: '0.85rem', color: '#4b5563', marginBottom: '1rem' }}>
+                You are verifying <strong>{verifyModal.name}</strong> ({verifyModal.place}, {verifyModal.district}).
+              </p>
+
+              <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', padding: '0.75rem 1rem', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.85rem' }}>
+                <div style={{ marginBottom: '0.25rem' }}><strong>Head of Institution:</strong> {verifyModal.head_name || 'Principal'}</div>
+                <div style={{ marginBottom: '0.25rem' }}>
+                  <strong>Phone Number:</strong>{' '}
+                  <a href={`tel:${verifyModal.contact_phone}`} style={{ color: '#047857', fontWeight: 800, textDecoration: 'underline' }}>
+                    {verifyModal.contact_phone || 'N/A'}
+                  </a>
+                </div>
+                <div><strong>Affiliation:</strong> {verifyModal.affiliation_university || 'State Board'}</div>
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 600, color: '#1f2937' }}>
+                  <input
+                    type="checkbox"
+                    checked={phoneConfirmed}
+                    onChange={e => setPhoneConfirmed(e.target.checked)}
+                    style={{ marginTop: '3px' }}
+                  />
+                  <span>I confirm that a KSRTC official called the Head of Institution at {verifyModal.contact_phone || 'the registered number'} and verified the institution credentials.</span>
+                </label>
+              </div>
+
+              <div className="form-group" style={{ marginBottom: '1.25rem' }}>
+                <label className="form-label" style={{ fontSize: '0.8125rem' }}>Verification Notes / Log</label>
+                <textarea
+                  className="form-input"
+                  rows={2}
+                  value={verifyNotes}
+                  onChange={e => setVerifyNotes(e.target.value)}
+                  placeholder="e.g. Called Principal office, verified AICTE/University affiliation"
+                  style={{ fontSize: '0.85rem' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                <button
+                  type="button"
+                  className="btn btn--outline"
+                  onClick={() => setVerifyModal(null)}
+                  disabled={actionLoading === verifyModal.id}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn--success"
+                  disabled={!phoneConfirmed || actionLoading === verifyModal.id}
+                  onClick={() => handleVerifyInstitution(verifyModal.id)}
+                >
+                  {actionLoading === verifyModal.id ? <span className="spinner" /> : '✅ Approve & Activate Institution'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* REJECT MODAL */}
+        {rejectModal && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+            <div className="card" style={{ maxWidth: '480px', width: '100%', background: '#fff', borderRadius: '12px', padding: '1.5rem', boxShadow: '0 20px 60px rgba(0,0,0,0.25)' }}>
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#dc2626', marginBottom: '0.5rem' }}>
+                Reject Institution Registration
+              </h3>
+              <p style={{ fontSize: '0.85rem', color: '#4b5563', marginBottom: '1rem' }}>
+                Rejecting <strong>{rejectModal.name}</strong>. Concession pass applications for this institution will not be permitted.
+              </p>
+
+              <div className="form-group" style={{ marginBottom: '1.25rem' }}>
+                <label className="form-label">Reason for Rejection</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={rejectReasonInst}
+                  onChange={e => setRejectReasonInst(e.target.value)}
+                  placeholder="e.g. Contact unreachable or affiliation could not be verified"
+                  autoFocus
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                <button
+                  type="button"
+                  className="btn btn--outline"
+                  onClick={() => setRejectModal(null)}
+                  disabled={actionLoading === rejectModal.id}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn--danger"
+                  disabled={actionLoading === rejectModal.id}
+                  onClick={() => handleRejectInstitution(rejectModal.id)}
+                >
+                  {actionLoading === rejectModal.id ? <span className="spinner" /> : 'Confirm Rejection'}
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>

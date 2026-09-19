@@ -103,6 +103,10 @@ export default function InstitutionRegister({ onAuth }) {
 
         {error && <div className="alert alert-error">⚠️ {error}</div>}
 
+        <div className="alert alert--info" style={{ marginBottom: '1.25rem', fontSize: '0.85rem' }}>
+          📞 <strong>KSRTC Verification Protocol:</strong> After registration, a KSRTC Depot Officer will contact the Head of Institution at your provided phone number to verify recognition before pass approvals are activated.
+        </div>
+
         <div className="card">
           <form onSubmit={handleSubmit}>
             <h3 style={{ color: 'var(--color-primary)', fontSize: '0.85rem', fontWeight: 700, marginBottom: '1.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>

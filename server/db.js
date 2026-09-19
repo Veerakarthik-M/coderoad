@@ -53,9 +53,19 @@ export async function getDb() {
       head_name TEXT,
       affiliation_university TEXT,
       affiliation_number TEXT,
+      status TEXT DEFAULT 'verified',
+      verification_notes TEXT,
+      verified_by TEXT,
+      verified_at TEXT,
       created_at TEXT DEFAULT (datetime('now'))
     )
   `);
+
+  // Migrations for existing databases
+  try { db.run("ALTER TABLE institutions ADD COLUMN status TEXT DEFAULT 'verified'"); } catch (_) {}
+  try { db.run("ALTER TABLE institutions ADD COLUMN verification_notes TEXT"); } catch (_) {}
+  try { db.run("ALTER TABLE institutions ADD COLUMN verified_by TEXT"); } catch (_) {}
+  try { db.run("ALTER TABLE institutions ADD COLUMN verified_at TEXT"); } catch (_) {}
 
   db.run(`
     CREATE TABLE IF NOT EXISTS applications (

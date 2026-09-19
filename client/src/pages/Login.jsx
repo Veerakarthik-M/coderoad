@@ -255,13 +255,19 @@ export default function Login({ portal: propPortal, onAuth }) {
           )}
         </div>
 
-        <p style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+        <div style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
           {isInstitution ? (
-            <>New institution? <Link to="/register/institution" style={{ color: '#059669', fontWeight: '600' }}>Register Your Institution</Link></>
+            <>New institution? <Link to="/register/institution" style={{ color: '#059669', fontWeight: '700' }}>Register Your Institution</Link></>
+          ) : isKsrtc ? (
+            <div style={{ fontSize: '0.8rem', color: '#4b5563', lineHeight: 1.5, background: '#f9fafb', border: '1px solid #e5e7eb', padding: '0.75rem', borderRadius: '6px' }}>
+              🔒 <strong>Official KSRTC Personnel Portal</strong><br />
+              For depot account setup or login enquiry, contact:<br />
+              <a href="mailto:controlroom@ksrtc.kerala.gov.in" style={{ color: '#064e3b', fontWeight: 700 }}>controlroom@ksrtc.kerala.gov.in</a> · 📞 <strong>0471-2463799</strong>
+            </div>
           ) : (
-            <>New student? <Link to="/register/student" style={{ color: 'var(--blue-600)', fontWeight: '600' }}>Apply for a Pass</Link></>
+            <>New student? <Link to="/register/student" style={{ color: 'var(--blue-600)', fontWeight: '700' }}>Apply for a Pass</Link></>
           )}
-        </p>
+        </div>
       </div>
     </div>
   );

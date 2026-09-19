@@ -95,14 +95,16 @@ router.post('/register', async (req, res) => {
     );
 
     // If institution, create institution record
+    let newInst = null;
     if (role === 'institution' && institutionName) {
-      execute(
+      const instId = execute(
         `INSERT INTO institutions (user_id, name, place, postal_name, pincode, district, 
-         institution_type, education_level, head_name, affiliation_university, affiliation_number)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         institution_type, education_level, head_name, affiliation_university, affiliation_number, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [userId, institutionName, institutionPlace, postalName, pincode, district,
-         institutionType, educationLevel, headName, affiliationUniversity, affiliationNumber]
+         institutionType, educationLevel, headName, affiliationUniversity, affiliationNumber, 'pending_ksrtc_verification']
       );
+      newInst = queryOne('SELECT * FROM institutions WHERE id = ?', [instId]);
     }
 
     saveDb();
@@ -111,7 +113,8 @@ router.post('/register', async (req, res) => {
 
     res.status(201).json({ 
       token, 
-      user: { id: userId, role, email, name } 
+      user: { id: userId, role, email, name },
+      institution: newInst
     });
   } catch (err) {
     console.error('Register error:', err);
