@@ -4,9 +4,18 @@
 
 ---
 
-## 1. Project Header
+## 1. Project Header & Live Links
 
 **ANAVANDI** is a role-based web platform designed for the Kerala State Road Transport Corporation (KSRTC) ecosystem. It digitizes the end-to-end lifecycle of student concession passes: from initial student registration and multi-document submission, through educational institution verification, to KSRTC administrative issuance of ECDSA-signed digital passes and real-time on-bus verification by conductors using device cameras—functioning both online and completely offline.
+
+### 🚀 Live Deployment & Working Prototype
+
+| Service | Platform | Live URL | Status |
+|---|---|---|---|
+| **Web Application (Frontend)** | Vercel | [https://coderoad-alpha.vercel.app](https://coderoad-alpha.vercel.app) | 🟢 Live |
+| **REST API Server (Backend)** | Render | [https://coderoad-zp7o.onrender.com/api](https://coderoad-zp7o.onrender.com/api) | 🟢 Live |
+| **Conductor Terminal** | PWA / Mobile | [https://coderoad-alpha.vercel.app/conductor](https://coderoad-alpha.vercel.app/conductor) | 🟢 Live |
+| **API Health Check** | Render | [https://coderoad-zp7o.onrender.com/api/health](https://coderoad-zp7o.onrender.com/api/health) | 🟢 200 OK |
 
 - **Platform**: Multi-role web application (Desktop & Mobile responsive)
 - **Primary Users**: Students, Educational Institutions (Colleges & Schools), KSRTC Depot Administrators, Bus Conductors
@@ -458,32 +467,61 @@ ANAVANDI/
 
 ---
 
-## 18. Installation & Running
+## 18. How to Access & Evaluate the Platform
 
-### Prerequisites
+Evaluators, judges, and developers can test and inspect ANAVANDI using either of two methods:
+
+---
+
+### Option 1: Direct Live Access (Recommended for Evaluators — Zero Installation)
+
+The complete application is deployed and actively running on cloud infrastructure:
+- **Web Application (Frontend)**: [https://coderoad-alpha.vercel.app](https://coderoad-alpha.vercel.app) (Hosted on Vercel)
+- **REST API & Crypto Engine (Backend)**: [https://coderoad-zp7o.onrender.com/api](https://coderoad-zp7o.onrender.com/api) (Hosted on Render)
+- **Conductor Scanner Terminal**: [https://coderoad-alpha.vercel.app/conductor](https://coderoad-alpha.vercel.app/conductor)
+
+#### Pre-Configured Test Accounts for Evaluators
+All test accounts are pre-seeded and ready for immediate evaluation (password for all demo accounts: `demo123`):
+
+| Role | Direct Portal URL | Email / Username | Password | Key Actions to Test |
+|---|---|---|---|---|
+| **KSRTC Depot Admin** | [`/login/ksrtc`](https://coderoad-alpha.vercel.app/login/ksrtc) | `admin@ksrtc.in` | `demo123` | Institutional call verification protocol, approve/reject college registrations, issue ECDSA-signed passes, revoke passes |
+| **Institution Admin** | [`/login/institution`](https://coderoad-alpha.vercel.app/login/institution) | `admin@amrita.edu` | `demo123` | Review enrolled student applications, inspect uploaded ID cards and ration cards in full resolution, approve or reject |
+| **Student** | [`/login/student`](https://coderoad-alpha.vercel.app/login/student) | `karthik@student.in` | `demo123` | View issued digital concession pass, scannable QR code, route info, and status timeline |
+| **Bus Conductor** | [`/conductor`](https://coderoad-alpha.vercel.app/conductor) | Direct terminal or `conductor1@ksrtc.in` | `demo123` | Instant camera QR code scanner, Web Crypto ECDSA signature validation, offline scan queuing and background sync |
+
+> **Self-Registration Test**: You can also register a brand new student (`/register/student`) or register a new college (`/register/institution`) to test the live end-to-end multi-tier registration and KSRTC verification workflow from scratch.
+
+---
+
+### Option 2: Local Development & Verification (For Code Reviewers & Offline Testing)
+
+If you wish to inspect the codebase, run unit tests, modify SQLite schemas, or test offline locally:
+
+#### Prerequisites
 - **Node.js**: v18.0.0 or higher
 - **npm**: v9.0.0 or higher
 
-### 1. Clone the Repository
+#### 1. Clone the Repository
 ```bash
 git clone https://github.com/Veerakarthik-M/coderoad.git
 cd coderoad
 ```
 
-### 2. Setup and Start Backend Server
+#### 2. Setup and Start Backend Server
 ```bash
 cd server
 npm install
 
-# (Optional) Seed the database with demo accounts and passes
+# Seed the database with realistic demo accounts, colleges, and issued passes
 npm run seed
 
 # Start the backend server
 npm start
 ```
-*The server will start on `http://localhost:3001`.*
+*The backend server will run on `http://localhost:3001` (Health: `http://localhost:3001/api/health`).*
 
-### 3. Setup and Start Frontend Client
+#### 3. Setup and Start Frontend Client
 In a separate terminal window:
 ```bash
 cd client
@@ -493,6 +531,8 @@ npm install
 npm run dev
 ```
 *The client application will start on `http://localhost:5173`.*
+
+> **Environment Note**: In local development, the client connects to `http://localhost:3001/api` by default. In the deployed production build, the client automatically routes to `https://coderoad-zp7o.onrender.com/api`.
 
 ---
 
