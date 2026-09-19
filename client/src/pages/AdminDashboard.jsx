@@ -178,6 +178,22 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleUnderReview = async (instId) => {
+    setActionLoading(instId);
+    try {
+      await api.post(`/admin/institutions/${instId}/under-review`, {
+        notes: 'Under review - KSRTC official inquiry and background check in progress'
+      });
+      setAlert({ type: 'success', msg: 'Institution status set to Under Review.' });
+      loadInstitutions();
+      loadStats();
+    } catch (err) {
+      setAlert({ type: 'error', msg: err.message });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const approveApp = async (id) => {
     setActionLoading(id);
     try {
@@ -485,7 +501,9 @@ export default function AdminDashboard() {
                   {[
                     { id: 'all', label: `All (${institutions.length})` },
                     { id: 'pending', label: `⏳ Pending Verification (${institutions.filter(i => i.status === 'pending_ksrtc_verification').length})` },
-                    { id: 'verified', label: `✅ Verified (${institutions.filter(i => i.status !== 'pending_ksrtc_verification' && i.status !== 'rejected').length})` },
+                    { id: 'under_review', label: `🔍 Under Review (${institutions.filter(i => i.status === 'under_review').length})` },
+                    { id: 'verified', label: `✅ Approved (${institutions.filter(i => i.status !== 'pending_ksrtc_verification' && i.status !== 'under_review' && i.status !== 'rejected').length})` },
+                    { id: 'rejected', label: `❌ Rejected (${institutions.filter(i => i.status === 'rejected').length})` },
                   ].map(f => (
                     <button
                       key={f.id}
@@ -515,7 +533,9 @@ export default function AdminDashboard() {
               {(() => {
                 const filtered = institutions.filter(i => {
                   if (instFilter === 'pending' && i.status !== 'pending_ksrtc_verification') return false;
-                  if (instFilter === 'verified' && (i.status === 'pending_ksrtc_verification' || i.status === 'rejected')) return false;
+                  if (instFilter === 'under_review' && i.status !== 'under_review') return false;
+                  if (instFilter === 'verified' && (i.status === 'pending_ksrtc_verification' || i.status === 'under_review' || i.status === 'rejected')) return false;
+                  if (instFilter === 'rejected' && i.status !== 'rejected') return false;
                   if (!instSearch.trim()) return true;
                   const q = instSearch.toLowerCase();
                   return (
@@ -540,6 +560,7 @@ export default function AdminDashboard() {
                   <div style={{ display: 'grid', gap: '1rem' }}>
                     {filtered.map(inst => {
                       const isPending = inst.status === 'pending_ksrtc_verification';
+                      const isUnderReview = inst.status === 'under_review';
                       const isRejected = inst.status === 'rejected';
 
                       return (
@@ -547,7 +568,7 @@ export default function AdminDashboard() {
                           key={inst.id}
                           className="card"
                           style={{
-                            borderLeft: `5px solid ${isPending ? '#f59e0b' : isRejected ? '#dc2626' : '#10b981'}`,
+                            borderLeft: `5px solid ${isPending ? '#f59e0b' : isUnderReview ? '#3b82f6' : isRejected ? '#dc2626' : '#10b981'}`,
                             padding: '1.25rem',
                           }}
                         >
@@ -569,7 +590,11 @@ export default function AdminDashboard() {
                             <div>
                               {isPending ? (
                                 <span className="badge badge--pending" style={{ background: '#fef3c7', color: '#92400e', border: '1px solid #f59e0b', fontWeight: 800, padding: '0.35rem 0.75rem' }}>
-                                  ⏳ Awaiting KSRTC Call Verification
+                                  ⏳ Pending Verification
+                                </span>
+                              ) : isUnderReview ? (
+                                <span className="badge" style={{ background: '#eff6ff', color: '#1e40af', border: '1px solid #93c5fd', fontWeight: 800, padding: '0.35rem 0.75rem' }}>
+                                  🔍 Under Review
                                 </span>
                               ) : isRejected ? (
                                 <span className="badge badge--rejected" style={{ padding: '0.35rem 0.75rem' }}>
@@ -577,7 +602,7 @@ export default function AdminDashboard() {
                                 </span>
                               ) : (
                                 <span className="badge badge--active" style={{ background: '#d1fae5', color: '#065f46', border: '1px solid #10b981', fontWeight: 800, padding: '0.35rem 0.75rem' }}>
-                                  ✅ Verified & Active on Portal
+                                  ✅ Approved & Active on Portal
                                 </span>
                               )}
                             </div>
@@ -624,7 +649,7 @@ export default function AdminDashboard() {
                               Registered on: {fmtDate(inst.created_at)}
                             </div>
 
-                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                               {inst.contact_phone && (
                                 <a
                                   href={`tel:${inst.contact_phone}`}
@@ -636,6 +661,17 @@ export default function AdminDashboard() {
                               )}
 
                               {isPending && (
+                                <button
+                                  className="btn btn--outline btn--sm"
+                                  style={{ borderColor: '#3b82f6', color: '#2563eb', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
+                                  onClick={() => handleUnderReview(inst.id)}
+                                  disabled={actionLoading === inst.id}
+                                >
+                                  🔍 Mark Under Review
+                                </button>
+                              )}
+
+                              {(isPending || isUnderReview) && (
                                 <>
                                   <button
                                     className="btn btn--sm"
@@ -660,7 +696,7 @@ export default function AdminDashboard() {
                                 </>
                               )}
 
-                              {!isPending && !isRejected && (
+                              {!isPending && !isUnderReview && !isRejected && (
                                 <button
                                   className="btn btn--ghost btn--sm"
                                   onClick={() => {
@@ -677,12 +713,15 @@ export default function AdminDashboard() {
                         </div>
                       );
                     })}
+
+
                   </div>
                 );
               })()}
             </div>
           )
         )}
+
 
         {/* VERIFICATION MODAL */}
         {verifyModal && (

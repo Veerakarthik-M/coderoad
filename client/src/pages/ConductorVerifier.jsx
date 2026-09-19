@@ -378,7 +378,38 @@ export default function ConductorVerifier() {
 
   const hasPublicKey = !!getCachedPublicKey();
 
-  if (!user || user.role !== 'conductor') return null;
+  if (!user || user.role !== 'conductor') {
+    return (
+      <div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+        <div className="card" style={{ maxWidth: '440px', width: '100%', textAlign: 'center', padding: '2.5rem 2rem', borderRadius: '16px', boxShadow: '0 10px 30px rgba(0,0,0,0.08)' }}>
+          <div style={{ fontSize: '3.5rem', marginBottom: '1rem' }}>🚌 🔒</div>
+          <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#064e3b', marginBottom: '0.5rem' }}>
+            Conductor Verification Terminal
+          </h2>
+          <p style={{ fontSize: '0.875rem', color: '#4b5563', marginBottom: '1.5rem', lineHeight: 1.6 }}>
+            This terminal is restricted to authorized KSRTC bus conductors for offline and online digital student concession pass QR verification.
+          </p>
+          <button
+            type="button"
+            className="btn btn--primary"
+            style={{ width: '100%', justifyContent: 'center', background: '#064e3b', padding: '0.75rem', fontWeight: 700, marginBottom: '0.75rem' }}
+            onClick={() => navigate('/login/ksrtc')}
+          >
+            Sign In with Conductor ID
+          </button>
+          <button
+            type="button"
+            className="btn btn--outline"
+            style={{ width: '100%', justifyContent: 'center', padding: '0.625rem' }}
+            onClick={() => navigate('/')}
+          >
+            Return to Public Portal
+          </button>
+        </div>
+      </div>
+    );
+  }
+
 
   return (
     <div className="conductor-app">

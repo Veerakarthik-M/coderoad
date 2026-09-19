@@ -62,10 +62,15 @@ export async function getDb() {
   `);
 
   // Migrations for existing databases
-  try { db.run("ALTER TABLE institutions ADD COLUMN status TEXT DEFAULT 'verified'"); } catch (_) {}
+  try { db.run("ALTER TABLE institutions ADD COLUMN status TEXT DEFAULT 'pending_ksrtc_verification'"); } catch (_) {}
   try { db.run("ALTER TABLE institutions ADD COLUMN verification_notes TEXT"); } catch (_) {}
   try { db.run("ALTER TABLE institutions ADD COLUMN verified_by TEXT"); } catch (_) {}
   try { db.run("ALTER TABLE institutions ADD COLUMN verified_at TEXT"); } catch (_) {}
+
+  // Uniqueness indexes for strict duplicate prevention at database level
+  try { db.run("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_nocase ON users(LOWER(email))"); } catch (_) {}
+  try { db.run("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_phone_unique ON users(phone) WHERE phone IS NOT NULL AND phone != ''"); } catch (_) {}
+  try { db.run("CREATE UNIQUE INDEX IF NOT EXISTS idx_applications_inst_roll ON applications(institution_id, LOWER(roll_no)) WHERE status != 'rejected'"); } catch (_) {}
 
   db.run(`
     CREATE TABLE IF NOT EXISTS applications (

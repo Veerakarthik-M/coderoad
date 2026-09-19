@@ -64,9 +64,10 @@ router.post('/apply', authMiddleware, requireRole('student'), (req, res) => {
         [institutionId, rollNo]
       );
       if (existingRollNo) {
-        return res.status(409).json({ error: 'An active application with this Roll Number already exists for the selected institution.' });
+        return res.status(409).json({ error: 'This roll number is already registered.' });
       }
     }
+
 
     const appId = execute(
       `INSERT INTO applications (

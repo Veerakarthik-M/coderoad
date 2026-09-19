@@ -12,7 +12,7 @@ const INST_DRAFT_KEY = 'anavandi_inst_draft_v1';
 
 const INITIAL_INST_FORM = {
   institutionName: '', place: '', postalName: '', pincode: '', district: '',
-  institutionType: '', educationLevel: '', headName: '',
+  institutionType: '', educationLevel: '', headName: '', designation: 'Principal',
   affiliationUniversity: '', affiliationNumber: '',
   name: '', email: '', phone: '', password: '', confirmPassword: ''
 };
@@ -34,6 +34,7 @@ export default function InstitutionRegister({ onAuth }) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [submittedSuccess, setSubmittedSuccess] = useState(null);
   const initialDraft = useRef(getSavedInstDraft()).current;
   const [form, setForm] = useState(initialDraft.form);
   const [hasRestoredDraft, setHasRestoredDraft] = useState(
@@ -67,7 +68,7 @@ export default function InstitutionRegister({ onAuth }) {
       return;
     }
 
-    if (!form.headName.trim() || !/^[a-zA-Z\s]+$/.test(form.headName)) {
+    if (!form.headName.trim() || !/^[a-zA-Z\s.]+$/.test(form.headName)) {
       setError('Enter a valid Head of Institution name (letters and spaces only)');
       return;
     }
@@ -117,15 +118,88 @@ export default function InstitutionRegister({ onAuth }) {
         affiliationUniversity: form.affiliationUniversity,
         affiliationNumber: form.affiliationNumber
       });
-      onAuth(data.user, data.token);
       try { localStorage.removeItem(INST_DRAFT_KEY); } catch (_) {}
-      navigate('/institution');
+      setSubmittedSuccess({
+        institutionName: form.institutionName,
+        place: form.place,
+        district: form.district,
+        pincode: form.pincode,
+        institutionType: form.institutionType,
+        educationLevel: form.educationLevel,
+        headName: form.headName,
+        designation: form.designation || 'Principal',
+        adminName: form.name,
+        email: form.email,
+        phone: form.phone,
+        affiliationUniversity: form.affiliationUniversity
+      });
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
+
+  if (submittedSuccess) {
+    return (
+      <div className="register-shell register-shell--institution">
+        <div className="register-container" style={{ maxWidth: '640px', margin: '2rem auto' }}>
+          <div className="card" style={{ textAlign: 'center', padding: '2.5rem 2rem', borderRadius: '16px', boxShadow: '0 10px 30px rgba(0,0,0,0.08)' }}>
+            <div style={{ fontSize: '3.5rem', marginBottom: '0.75rem' }}>🏛️</div>
+            <span className="badge badge--pending" style={{ fontSize: '0.85rem', padding: '0.4rem 1rem', borderRadius: '999px', background: '#fef3c7', color: '#92400e', border: '1px solid #f59e0b', fontWeight: 800 }}>
+              ⏳ Pending KSRTC Verification
+            </span>
+            <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#064e3b', margin: '1rem 0 0.5rem' }}>
+              Registration Submitted Successfully
+            </h1>
+            <p style={{ fontSize: '0.95rem', color: '#374151', lineHeight: 1.6, marginBottom: '1.5rem' }}>
+              «Your institution registration has been submitted successfully. KSRTC will verify the institution details before granting access.»
+            </p>
+
+            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '1.25rem', textAlign: 'left', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
+              <h3 style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.75rem' }}>
+                Submitted Institution Profile
+              </h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem' }}>
+                <div><span style={{ color: '#64748b', display: 'block', fontSize: '0.75rem' }}>Institution</span><strong>{submittedSuccess.institutionName}</strong></div>
+                <div><span style={{ color: '#64748b', display: 'block', fontSize: '0.75rem' }}>Location</span><span>{submittedSuccess.place}, {submittedSuccess.district} ({submittedSuccess.pincode})</span></div>
+                <div><span style={{ color: '#64748b', display: 'block', fontSize: '0.75rem' }}>Head of Institution</span><strong>{submittedSuccess.headName} ({submittedSuccess.designation})</strong></div>
+                <div><span style={{ color: '#64748b', display: 'block', fontSize: '0.75rem' }}>Authorized Admin</span><span>{submittedSuccess.adminName}</span></div>
+                <div><span style={{ color: '#64748b', display: 'block', fontSize: '0.75rem' }}>Official Email</span><span>{submittedSuccess.email}</span></div>
+                <div><span style={{ color: '#64748b', display: 'block', fontSize: '0.75rem' }}>Contact Phone</span><strong>{submittedSuccess.phone}</strong></div>
+              </div>
+            </div>
+
+            <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '8px', padding: '1rem', textAlign: 'left', marginBottom: '1.75rem', fontSize: '0.825rem', color: '#065f46', lineHeight: 1.6 }}>
+              📞 <strong>KSRTC Verification Protocol:</strong>
+              <div style={{ marginTop: '0.25rem' }}>
+                A KSRTC Depot Officer will contact the Head of Institution (<strong>{submittedSuccess.headName}</strong>) at <strong>{submittedSuccess.phone}</strong> to confirm institution legitimacy and affiliation. Once verified, your account will be activated to log in and approve student passes.
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="btn btn--primary"
+                style={{ background: '#059669', padding: '0.625rem 1.5rem', fontWeight: 700 }}
+                onClick={() => navigate('/login/institution')}
+              >
+                Go to Institution Login
+              </button>
+              <button
+                type="button"
+                className="btn btn--outline"
+                style={{ padding: '0.625rem 1.5rem' }}
+                onClick={() => navigate('/')}
+              >
+                Return to Home
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="register-shell register-shell--institution">
@@ -134,6 +208,7 @@ export default function InstitutionRegister({ onAuth }) {
           <h1 className="page-title">Institution Registration</h1>
           <p className="page-subtitle">Register your school or college to approve student concessions</p>
         </div>
+
 
         {hasRestoredDraft && (
           <div style={{
@@ -238,13 +313,25 @@ export default function InstitutionRegister({ onAuth }) {
             <div className="form-row">
               <div className="form-group">
                 <label className="form-label">Head of Institution <span className="required">*</span></label>
-                <input className="form-input" value={form.headName} onChange={e => updateForm('headName', e.target.value)} required />
+                <input className="form-input" placeholder="e.g. Dr. K. Radhakrishnan" value={form.headName} onChange={e => updateForm('headName', e.target.value)} required />
               </div>
               <div className="form-group">
-                <label className="form-label">University of Affiliation</label>
-                <input className="form-input" value={form.affiliationUniversity} onChange={e => updateForm('affiliationUniversity', e.target.value)} />
+                <label className="form-label">Authorized Designation <span className="required">*</span></label>
+                <select className="form-select" value={form.designation} onChange={e => updateForm('designation', e.target.value)} required>
+                  <option value="Principal">Principal</option>
+                  <option value="Headmaster / Headmistress">Headmaster / Headmistress</option>
+                  <option value="Dean / Director">Dean / Director</option>
+                  <option value="Registrar">Registrar</option>
+                  <option value="Student Welfare Officer">Student Welfare Officer</option>
+                  <option value="Administrator">Administrator</option>
+                </select>
               </div>
             </div>
+            <div className="form-group">
+              <label className="form-label">University / Board of Affiliation</label>
+              <input className="form-input" placeholder="e.g. University of Kerala / KTU / CBSE" value={form.affiliationUniversity} onChange={e => updateForm('affiliationUniversity', e.target.value)} />
+            </div>
+
 
             <h3 style={{ color: 'var(--color-primary)', fontSize: '0.85rem', fontWeight: 700, margin: '1.5rem 0 1.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Admin Account

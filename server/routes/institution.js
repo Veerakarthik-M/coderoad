@@ -11,10 +11,44 @@ function getInstitution(userId) {
   return queryOne('SELECT * FROM institutions WHERE user_id = ?', [userId]);
 }
 
-// GET /api/institution/applications — get all applications for this institution
-router.get('/applications', authMiddleware, requireRole('institution'), (req, res) => {
+// Middleware: ensure institution has been approved by KSRTC
+function requireApprovedInstitution(req, res, next) {
+  const institution = getInstitution(req.user.id);
+  if (!institution) {
+    return res.status(404).json({ error: 'Institution profile not found' });
+  }
+  const status = institution.status || 'verified';
+  if (status === 'pending_ksrtc_verification' || status === 'under_review') {
+    return res.status(403).json({
+      error: 'Institution access restricted. Your registration is awaiting KSRTC telephone and administrative verification.',
+      status
+    });
+  }
+  if (status === 'rejected') {
+    return res.status(403).json({
+      error: 'Institution registration rejected by KSRTC: ' + (institution.verification_notes || 'Credentials could not be verified.'),
+      status
+    });
+  }
+  req.institution = institution;
+  next();
+}
+
+// GET /api/institution/profile — check institution status & profile info
+router.get('/profile', authMiddleware, requireRole('institution'), (req, res) => {
   try {
     const institution = getInstitution(req.user.id);
+    if (!institution) return res.status(404).json({ error: 'Institution not found' });
+    res.json({ institution });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch institution profile' });
+  }
+});
+
+// GET /api/institution/applications — get all applications for this institution
+router.get('/applications', authMiddleware, requireRole('institution'), requireApprovedInstitution, (req, res) => {
+  try {
+    const institution = req.institution || getInstitution(req.user.id);
     if (!institution) return res.status(404).json({ error: 'Institution not found' });
 
     const applications = queryAll(
@@ -55,9 +89,9 @@ router.get('/applications', authMiddleware, requireRole('institution'), (req, re
 });
 
 // POST /api/institution/approve/:id — approve a student application
-router.post('/approve/:id', authMiddleware, requireRole('institution'), (req, res) => {
+router.post('/approve/:id', authMiddleware, requireRole('institution'), requireApprovedInstitution, (req, res) => {
   try {
-    const institution = getInstitution(req.user.id);
+    const institution = req.institution || getInstitution(req.user.id);
     if (!institution) return res.status(404).json({ error: 'Institution not found' });
 
     const app = queryOne(
@@ -80,10 +114,10 @@ router.post('/approve/:id', authMiddleware, requireRole('institution'), (req, re
 });
 
 // POST /api/institution/reject/:id — reject a student application
-router.post('/reject/:id', authMiddleware, requireRole('institution'), (req, res) => {
+router.post('/reject/:id', authMiddleware, requireRole('institution'), requireApprovedInstitution, (req, res) => {
   try {
     const { reason } = req.body;
-    const institution = getInstitution(req.user.id);
+    const institution = req.institution || getInstitution(req.user.id);
     if (!institution) return res.status(404).json({ error: 'Institution not found' });
 
     const app = queryOne(
@@ -107,9 +141,9 @@ router.post('/reject/:id', authMiddleware, requireRole('institution'), (req, res
 
 // GET /api/institution/students — list all students belonging to this institution
 // Includes pass status
-router.get('/students', authMiddleware, requireRole('institution'), (req, res) => {
+router.get('/students', authMiddleware, requireRole('institution'), requireApprovedInstitution, (req, res) => {
   try {
-    const institution = getInstitution(req.user.id);
+    const institution = req.institution || getInstitution(req.user.id);
     if (!institution) return res.status(404).json({ error: 'Institution not found' });
 
     const students = queryAll(
@@ -139,9 +173,9 @@ router.get('/students', authMiddleware, requireRole('institution'), (req, res) =
 });
 
 // GET /api/institution/student/:userId/history — travel/verification history for a student
-router.get('/student/:userId/history', authMiddleware, requireRole('institution'), (req, res) => {
+router.get('/student/:userId/history', authMiddleware, requireRole('institution'), requireApprovedInstitution, (req, res) => {
   try {
-    const institution = getInstitution(req.user.id);
+    const institution = req.institution || getInstitution(req.user.id);
     if (!institution) return res.status(404).json({ error: 'Institution not found' });
 
     // Verify this student belongs to this institution
@@ -175,9 +209,9 @@ router.get('/student/:userId/history', authMiddleware, requireRole('institution'
 });
 
 // GET /api/institution/verification-logs — recent verification events for this institution
-router.get('/verification-logs', authMiddleware, requireRole('institution'), (req, res) => {
+router.get('/verification-logs', authMiddleware, requireRole('institution'), requireApprovedInstitution, (req, res) => {
   try {
-    const institution = getInstitution(req.user.id);
+    const institution = req.institution || getInstitution(req.user.id);
     if (!institution) return res.status(404).json({ error: 'Institution not found' });
 
     const page = parseInt(req.query.page) || 1;
@@ -210,9 +244,9 @@ router.get('/verification-logs', authMiddleware, requireRole('institution'), (re
 });
 
 // GET /api/institution/stats — quick stats for the dashboard header
-router.get('/stats', authMiddleware, requireRole('institution'), (req, res) => {
+router.get('/stats', authMiddleware, requireRole('institution'), requireApprovedInstitution, (req, res) => {
   try {
-    const institution = getInstitution(req.user.id);
+    const institution = req.institution || getInstitution(req.user.id);
     if (!institution) return res.status(404).json({ error: 'Institution not found' });
 
     const total = queryOne('SELECT COUNT(*) as count FROM applications WHERE institution_id = ?', [institution.id]);
@@ -238,3 +272,4 @@ router.get('/stats', authMiddleware, requireRole('institution'), (req, res) => {
 });
 
 export default router;
+

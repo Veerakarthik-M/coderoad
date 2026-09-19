@@ -421,12 +421,37 @@ export default function StudentRegister({ onAuth }) {
     return errors;
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     const errors = validateStep();
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       return;
     }
+
+    // Real-time backend uniqueness checks
+    if (step === 1) {
+      try {
+        const cleanPhone = form.phone.replace(/\D/g, '');
+        const check = await api.get(`/auth/check-unique?email=${encodeURIComponent(form.email)}&phone=${cleanPhone}`);
+        const asyncErrors = {};
+        if (check.emailExists) asyncErrors.email = 'This email ID is already registered.';
+        if (check.phoneExists) asyncErrors.phone = 'This phone number is already registered.';
+        if (Object.keys(asyncErrors).length > 0) {
+          setFieldErrors(asyncErrors);
+          return;
+        }
+      } catch (_) {}
+    } else if (step === 2) {
+      try {
+        const instId = parseInt(form.institutionId);
+        const check = await api.get(`/auth/check-unique?roll_no=${encodeURIComponent(form.rollNo)}&institution_id=${instId}`);
+        if (check.rollExists) {
+          setFieldErrors({ rollNo: 'This roll number is already registered.' });
+          return;
+        }
+      } catch (_) {}
+    }
+
     setFieldErrors({});
     handleStepChange(step + 1);
   };
@@ -459,7 +484,7 @@ export default function StudentRegister({ onAuth }) {
     setSubmitError('');
     setLoading(true);
     try {
-      // 1. Register user
+      // 1. Register user (includes backend uniqueness validation for email, phone, and roll number)
       const regData = await api.post('/auth/register', {
         email: form.email,
         username: form.username,
@@ -467,8 +492,11 @@ export default function StudentRegister({ onAuth }) {
         name: form.name,
         phone: form.phone,
         role: 'student',
+        rollNo: form.rollNo,
+        institutionId: form.institutionId ? parseInt(form.institutionId) : null,
       });
       onAuth(regData.user, regData.token);
+
 
       // 2. Submit application
       const appData = await api.post('/student/apply', {

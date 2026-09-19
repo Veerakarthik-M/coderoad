@@ -204,18 +204,47 @@ router.get('/institutions', authMiddleware, requireRole('admin'), (req, res) => 
        FROM institutions i
        JOIN users u ON i.user_id = u.id
        ORDER BY 
-         CASE COALESCE(i.status, 'verified')
-           WHEN 'pending_ksrtc_verification' THEN 1
-           WHEN 'verified' THEN 2
-           WHEN 'rejected' THEN 3
-           ELSE 4
-         END,
-         i.created_at DESC`
+          CASE COALESCE(i.status, 'verified')
+            WHEN 'pending_ksrtc_verification' THEN 1
+            WHEN 'under_review' THEN 2
+            WHEN 'verified' THEN 3
+            WHEN 'approved' THEN 3
+            WHEN 'rejected' THEN 4
+            ELSE 5
+          END,
+          i.created_at DESC`
     );
     res.json({ institutions });
   } catch (err) {
     console.error('Admin get institutions error:', err);
     res.status(500).json({ error: 'Failed to fetch institutions' });
+  }
+});
+
+// POST /api/admin/institutions/:id/under-review — set institution status to under review
+router.post('/institutions/:id/under-review', authMiddleware, requireRole('admin'), (req, res) => {
+  try {
+    const { notes } = req.body;
+    const inst = queryOne('SELECT * FROM institutions WHERE id = ?', [req.params.id]);
+    if (!inst) {
+      return res.status(404).json({ error: 'Institution not found' });
+    }
+
+    execute(
+      `UPDATE institutions 
+       SET status = 'under_review', 
+           verification_notes = ?, 
+           verified_by = ?, 
+           verified_at = datetime('now') 
+       WHERE id = ?`,
+      [notes || 'Under review - KSRTC official inquiry in progress', req.user.name || 'KSRTC Officer', req.params.id]
+    );
+    saveDb();
+
+    res.json({ message: 'Institution marked as Under Review', id: req.params.id });
+  } catch (err) {
+    console.error('Admin under-review error:', err);
+    res.status(500).json({ error: 'Status update failed' });
   }
 });
 
