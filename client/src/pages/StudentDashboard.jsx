@@ -153,9 +153,19 @@ export default function StudentDashboard() {
                 <p style={{ fontSize: '0.875rem', marginBottom: '1rem' }}>
                   Show the QR code to the conductor for bus boarding.
                 </p>
-                <Link to="/student/pass" className="btn btn--success btn--lg" id="view-pass-btn">
+                <Link to="/student/pass" className="btn btn--success btn--lg" id="view-pass-btn" style={{ marginBottom: '1.5rem' }}>
                   View Digital Pass & QR Code
                 </Link>
+                
+                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 'var(--radius)', padding: '1rem', textAlign: 'left', fontSize: '0.8125rem' }}>
+                  <div style={{ fontWeight: 700, color: '#334155', marginBottom: '0.75rem', fontSize: '0.875rem' }}>📋 Pass Usage Rules</div>
+                  <ul style={{ paddingLeft: '1.25rem', margin: 0, color: '#475569', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <li>✅ <strong>Unlimited Rides:</strong> Use multiple times per day.</li>
+                    <li>✅ <strong>Weekends:</strong> Valid on Saturdays, Sundays, & holidays.</li>
+                    <li>❌ <strong>Valid Services:</strong> NOT valid on Super Fast Express, AC, or Volvo. Only Ordinary & Fast Passenger.</li>
+                    <li>❌ <strong>Route Strict:</strong> Only valid exactly on {app.route_from} ↔ {app.route_to}.</li>
+                  </ul>
+                </div>
               </div>
             )}
 
