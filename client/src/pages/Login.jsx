@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../api';
 
-export default function Login({ onAuth }) {
+export default function Login({ portal: propPortal, onAuth }) {
   const navigate = useNavigate();
+  const [activePortal, setActivePortal] = useState(propPortal || 'student');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -48,29 +49,105 @@ export default function Login({ onAuth }) {
     }
   };
 
+  const isInstitution = activePortal === 'institution';
+  const isKsrtc = activePortal === 'ksrtc';
+
   return (
     <div className="login-shell">
       <div className="login-left">
         <img src="/ksrtc-bus.jpg" alt="KSRTC Bus" className="login-left__bg" />
         <div className="login-left__overlay"></div>
         <div className="login-left__content">
-          <h2 className="login-left__quote">"Empowering students with seamless digital transit."</h2>
+          <h2 className="login-left__quote">
+            {isInstitution 
+              ? '"Streamlining student verification for educational institutions across Kerala."' 
+              : isKsrtc 
+              ? '"Empowering KSRTC officials and conductors with instant digital pass validation."' 
+              : '"Empowering students with seamless digital transit."'
+            }
+          </h2>
           <p className="login-left__sub">Official Portal of Kerala State Road Transport Corporation</p>
         </div>
       </div>
       
       <div className="login-right">
+        {/* Portal Switcher Tabs */}
+        <div style={{ display: 'flex', gap: '0.25rem', background: '#f3f4f6', padding: '4px', borderRadius: '8px', marginBottom: '1.5rem' }}>
+          <button
+            type="button"
+            onClick={() => setActivePortal('student')}
+            style={{
+              flex: 1,
+              padding: '0.4rem 0.5rem',
+              border: 'none',
+              borderRadius: '6px',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              background: activePortal === 'student' ? '#ffffff' : 'transparent',
+              color: activePortal === 'student' ? '#064e3b' : '#6b7280',
+              boxShadow: activePortal === 'student' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
+              cursor: 'pointer'
+            }}
+          >
+            🎓 Student Login
+          </button>
+          <button
+            type="button"
+            onClick={() => setActivePortal('institution')}
+            style={{
+              flex: 1,
+              padding: '0.4rem 0.5rem',
+              border: 'none',
+              borderRadius: '6px',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              background: isInstitution ? '#ffffff' : 'transparent',
+              color: isInstitution ? '#059669' : '#6b7280',
+              boxShadow: isInstitution ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
+              cursor: 'pointer'
+            }}
+          >
+            🏫 School / College
+          </button>
+          <button
+            type="button"
+            onClick={() => setActivePortal('ksrtc')}
+            style={{
+              flex: 1,
+              padding: '0.4rem 0.5rem',
+              border: 'none',
+              borderRadius: '6px',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              background: isKsrtc ? '#ffffff' : 'transparent',
+              color: isKsrtc ? '#064e3b' : '#6b7280',
+              boxShadow: isKsrtc ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
+              cursor: 'pointer'
+            }}
+          >
+            🚌 KSRTC Admin
+          </button>
+        </div>
+
         <div className="login-logo">
-          <div className="login-logo__icon">A</div>
+          <div className="login-logo__icon" style={{ background: isInstitution ? '#059669' : '#064e3b' }}>
+            {isInstitution ? '🏫' : isKsrtc ? '🚌' : 'A'}
+          </div>
           <div>
             <div className="login-logo__name">ANAVANDI</div>
-            <div className="login-logo__tagline">Student Concession Pass</div>
+            <div className="login-logo__tagline" style={{ fontWeight: 600, color: isInstitution ? '#059669' : '#064e3b' }}>
+              {isInstitution ? 'Educational Institution Portal' : isKsrtc ? 'KSRTC Officer & Admin Portal' : 'Student Concession Pass'}
+            </div>
           </div>
         </div>
 
         <div>
-          <h1 className="login-form__title">Welcome back</h1>
-          <p className="login-form__subtitle">Sign in to your account to continue</p>
+          <h1 className="login-form__title">
+            {isInstitution ? 'School & College Portal Sign In' : isKsrtc ? 'KSRTC Official Portal Sign In' : 'Student Sign In'}
+          </h1>
+          <p className="login-form__subtitle">
+            {isInstitution ? 'Enter your institutional officer credentials to manage student passes' : isKsrtc ? 'Authorized KSRTC officers & conductors sign in here' : 'Sign in to access your digital concession pass'}
+          </p>
         </div>
 
         {error && (
@@ -88,7 +165,7 @@ export default function Login({ onAuth }) {
               className="form-input"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="name@example.com"
+              placeholder={isInstitution ? 'admin@amrita.edu' : isKsrtc ? 'admin@ksrtc.in' : 'name@example.com'}
               autoComplete="username"
               required
             />
@@ -111,40 +188,75 @@ export default function Login({ onAuth }) {
           <button
             type="submit"
             className="btn btn--primary"
-            style={{ width: '100%', justifyContent: 'center' }}
+            style={{ width: '100%', justifyContent: 'center', background: isInstitution ? '#059669' : '#064e3b' }}
             id="login-submit"
             disabled={loading}
           >
-            {loading ? <span className="spinner" /> : 'Sign In'}
+            {loading ? <span className="spinner" /> : isInstitution ? 'Sign In to College Portal' : isKsrtc ? 'Sign In to KSRTC Portal' : 'Sign In'}
           </button>
         </form>
 
-        <div className="divider">or quick login (demo)</div>
+        <div className="divider">quick demo access</div>
 
         <div className="quick-logins">
-          {[
-            { label: 'karthik@student.in', role: 'Student', email: 'karthik@student.in', id: 'quick-student' },
-            { label: 'admin@amrita.edu', role: 'Institution', email: 'admin@amrita.edu', id: 'quick-institution' },
-            { label: 'admin@ksrtc.in', role: 'Admin', email: 'admin@ksrtc.in', id: 'quick-admin' },
-            { label: 'conductor1@ksrtc.in', role: 'Conductor', email: 'conductor1@ksrtc.in', id: 'quick-conductor' },
-          ].map((acc) => (
+          {isInstitution ? (
             <button
-              key={acc.id}
-              id={acc.id}
-              onClick={() => quickLogin(acc.email)}
+              id="quick-institution"
+              onClick={() => quickLogin('admin@amrita.edu')}
               className="quick-login-btn"
+              style={{ border: '2px solid #059669', background: '#ecfdf5', gridColumn: '1 / -1' }}
               disabled={loading}
               type="button"
             >
-              <span className="quick-login-btn__role">{acc.role}</span>
-              {acc.label}
+              <span className="quick-login-btn__role" style={{ color: '#059669', fontWeight: 800 }}>🏫 College / School Admin (Demo)</span>
+              admin@amrita.edu
             </button>
-          ))}
+          ) : isKsrtc ? (
+            <>
+              <button
+                id="quick-admin"
+                onClick={() => quickLogin('admin@ksrtc.in')}
+                className="quick-login-btn"
+                style={{ border: '2px solid #064e3b', background: '#f0fdf4' }}
+                disabled={loading}
+                type="button"
+              >
+                <span className="quick-login-btn__role" style={{ color: '#064e3b', fontWeight: 800 }}>🚌 KSRTC Admin</span>
+                admin@ksrtc.in
+              </button>
+              <button
+                id="quick-conductor"
+                onClick={() => quickLogin('conductor1@ksrtc.in')}
+                className="quick-login-btn"
+                style={{ border: '2px solid #d97706', background: '#fefce8' }}
+                disabled={loading}
+                type="button"
+              >
+                <span className="quick-login-btn__role" style={{ color: '#d97706', fontWeight: 800 }}>📱 Bus Conductor</span>
+                conductor1@ksrtc.in
+              </button>
+            </>
+          ) : (
+            <button
+              id="quick-student"
+              onClick={() => quickLogin('karthik@student.in')}
+              className="quick-login-btn"
+              style={{ border: '2px solid #2563eb', background: '#eff6ff', gridColumn: '1 / -1' }}
+              disabled={loading}
+              type="button"
+            >
+              <span className="quick-login-btn__role" style={{ color: '#2563eb', fontWeight: 800 }}>🎓 Student (Demo)</span>
+              karthik@student.in
+            </button>
+          )}
         </div>
 
         <p style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-          New student?{' '}
-          <Link to="/register/student" style={{ color: 'var(--blue-600)', fontWeight: '600' }}>Apply for a Pass</Link>
+          {isInstitution ? (
+            <>New school or college? <Link to="/register/institution" style={{ color: '#059669', fontWeight: '600' }}>Register Institution</Link></>
+          ) : (
+            <>New student? <Link to="/register/student" style={{ color: 'var(--blue-600)', fontWeight: '600' }}>Apply for a Pass</Link></>
+          )}
         </p>
       </div>
     </div>

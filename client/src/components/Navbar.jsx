@@ -28,11 +28,11 @@ export default function Navbar({ user }) {
               </Link>
             ) : (
               <>
-                <Link to="/login" style={{ background: '#ffffff', color: '#1f2937', border: '1px solid #d1d5db', padding: '0.5rem 0.875rem', borderRadius: '6px', fontWeight: 700, fontSize: '0.8125rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.375rem' }} id="nav-school-login">
-                  🔒 School / College Login
+                <Link to="/login/institution" style={{ background: '#ffffff', color: '#1f2937', border: '1px solid #d1d5db', padding: '0.5rem 0.875rem', borderRadius: '6px', fontWeight: 700, fontSize: '0.8125rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.375rem' }} id="nav-school-login">
+                  🏫 School / College Login
                 </Link>
-                <Link to="/login" style={{ background: '#047857', color: '#ffffff', padding: '0.5rem 0.875rem', borderRadius: '6px', fontWeight: 700, fontSize: '0.8125rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.375rem' }} id="nav-ksrtc-login">
-                  🔒 KSRTC Login
+                <Link to="/login/ksrtc" style={{ background: '#047857', color: '#ffffff', padding: '0.5rem 0.875rem', borderRadius: '6px', fontWeight: 700, fontSize: '0.8125rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.375rem' }} id="nav-ksrtc-login">
+                  🚌 KSRTC Official Login
                 </Link>
               </>
             )}

@@ -58,6 +58,8 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Landing user={user} onAuth={handleAuth} />} />
         <Route path="/login" element={<Login onAuth={handleAuth} />} />
+        <Route path="/login/institution" element={<Login portal="institution" onAuth={handleAuth} />} />
+        <Route path="/login/ksrtc" element={<Login portal="ksrtc" onAuth={handleAuth} />} />
         <Route path="/register/student" element={<StudentRegister onAuth={handleAuth} />} />
         <Route path="/register/institution" element={<InstitutionRegister onAuth={handleAuth} />} />
         
