@@ -162,7 +162,7 @@ export default function StudentRegister({ onAuth }) {
     if (step === 0) {
       if (!form.studentType) errors.studentType = 'Please select a student type';
     } else if (step === 1) {
-      if (!form.name.trim()) errors.name = 'Full name is required';
+      if (!form.name.trim() || !/^[a-zA-Z\s]+$/.test(form.name)) errors.name = 'Enter a valid name (letters and spaces only)';
       
       if (!form.dateOfBirth) {
         errors.dateOfBirth = 'Date of birth is required';
@@ -178,7 +178,7 @@ export default function StudentRegister({ onAuth }) {
       }
 
       if (!form.gender) errors.gender = 'Please select a gender';
-      if (!form.guardianName.trim()) errors.guardianName = 'Guardian name is required';
+      if (!form.guardianName.trim() || !/^[a-zA-Z\s]+$/.test(form.guardianName)) errors.guardianName = 'Enter a valid name (letters and spaces only)';
       
       const cleanPhone = form.phone.replace(/\D/g, '');
       if (!cleanPhone.match(/^[6-9]\d{9}$/) || /^(\d)\1{9}$/.test(cleanPhone)) {
@@ -193,7 +193,7 @@ export default function StudentRegister({ onAuth }) {
       }
 
       if (!form.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) errors.email = 'Enter a valid email address';
-      if (!form.username.trim()) errors.username = 'Username is required';
+      if (!form.username.trim() || !/^[a-zA-Z0-9_]+$/.test(form.username)) errors.username = 'Username can only contain letters, numbers, and underscores';
       if (form.password.length < 6) errors.password = 'Password must be at least 6 characters';
       if (form.password !== form.confirmPassword) errors.confirmPassword = 'Passwords do not match';
       if (!form.address.trim()) errors.address = 'Address is required';

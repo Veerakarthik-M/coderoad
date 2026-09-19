@@ -26,6 +26,24 @@ export default function InstitutionRegister({ onAuth }) {
     e.preventDefault();
     setError('');
 
+    if (!form.institutionName.trim()) { setError('Institution Name is required'); return; }
+    if (!form.place.trim()) { setError('Place is required'); return; }
+    
+    if (!/^\d{6}$/.test(form.pincode)) {
+      setError('Please enter a valid 6-digit Pincode');
+      return;
+    }
+
+    if (!form.headName.trim() || !/^[a-zA-Z\s]+$/.test(form.headName)) {
+      setError('Enter a valid Head of Institution name (letters and spaces only)');
+      return;
+    }
+
+    if (!form.name.trim() || !/^[a-zA-Z\s]+$/.test(form.name)) {
+      setError('Enter a valid Admin name (letters and spaces only)');
+      return;
+    }
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(form.email)) {
       setError('Please enter a valid email address');

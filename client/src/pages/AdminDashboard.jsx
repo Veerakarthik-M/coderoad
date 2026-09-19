@@ -30,26 +30,30 @@ export default function AdminDashboard() {
   const [revokeReason, setRevokeReason] = useState('');
   const [rejectId, setRejectId] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
+  const [pageError, setPageError] = useState('');
 
-  useEffect(() => { loadStats(); }, []);
+  useEffect(() => { loadStats(); loadApplications(); }, []);
   useEffect(() => {
     if (tab === 'applications') loadApplications();
     else if (tab === 'credentials') loadCredentials();
   }, [tab]);
 
   const loadStats = async () => {
-    try { const d = await api.get('/admin/stats'); setStats(d); } catch {}
+    try { const d = await api.get('/admin/stats'); setStats(d); }
+    catch (err) { setPageError('Could not load stats: ' + err.message); }
   };
 
   const loadApplications = async () => {
     setLoading(true);
-    try { const d = await api.get('/admin/applications'); setApplications(d.applications || []); } catch {}
+    try { const d = await api.get('/admin/applications'); setApplications(d.applications || []); }
+    catch (err) { setPageError('Could not load applications: ' + err.message); }
     finally { setLoading(false); }
   };
 
   const loadCredentials = async () => {
     setLoading(true);
-    try { const d = await api.get('/admin/credentials'); setCredentials(d.credentials || []); } catch {}
+    try { const d = await api.get('/admin/credentials'); setCredentials(d.credentials || []); }
+    catch (err) { setPageError('Could not load credentials: ' + err.message); }
     finally { setLoading(false); }
   };
 
@@ -101,6 +105,13 @@ export default function AdminDashboard() {
             <p className="dashboard-hero__subtitle">Approve concession applications, issue and revoke credentials</p>
           </div>
         </div>
+
+        {pageError && (
+          <div className="alert alert--error" style={{ marginBottom: '1rem' }}>
+            ⚠️ {pageError}
+            <button onClick={() => setPageError('')} style={{ marginLeft: '0.5rem', background: 'none', border: 'none', color: 'inherit', cursor: 'pointer' }}>✕</button>
+          </div>
+        )}
 
         {stats && (
           <div className="stats-grid">

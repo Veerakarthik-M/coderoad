@@ -127,6 +127,24 @@ export default function Landing({ user, onAuth }) {
         </div>
       </section>
 
+      <section id="about" style={{ padding: '4rem 2rem', background: '#f9fafb', textAlign: 'center' }}>
+        <div className="container">
+          <h2 style={{ fontSize: '2rem', color: '#064e3b', marginBottom: '1rem' }}>About Portal</h2>
+          <p style={{ maxWidth: '800px', margin: '0 auto', color: '#4b5563', lineHeight: 1.6 }}>
+            The ANAVANDI Student Concession Portal is an initiative by the Kerala State Road Transport Corporation (KSRTC) to digitize and streamline the issuance of student concession passes. It allows students to apply online, institutions to verify enrollment, and conductors to validate digital passes seamlessly.
+          </p>
+        </div>
+      </section>
+
+      <section id="contact" style={{ padding: '4rem 2rem', background: '#ffffff', textAlign: 'center' }}>
+        <div className="container">
+          <h2 style={{ fontSize: '2rem', color: '#064e3b', marginBottom: '1rem' }}>Contact KSRTC</h2>
+          <p style={{ color: '#4b5563', marginBottom: '0.5rem' }}>For any queries regarding the portal, please contact the KSRTC control room:</p>
+          <p style={{ fontWeight: 600, color: '#1f2937', fontSize: '1.25rem' }}>Phone: 0471-2463799 / 9447071021</p>
+          <p style={{ color: '#4b5563' }}>Email: <a href="mailto:rsnksrtc@kerala.gov.in" style={{ color: '#047857' }}>rsnksrtc@kerala.gov.in</a></p>
+        </div>
+      </section>
+
     </main>
   );
 }

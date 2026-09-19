@@ -1,10 +1,26 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 export default function Navbar({ user }) {
   const location = useLocation();
+  const navigate = useNavigate();
 
   const hidePaths = ['/login', '/register', '/student', '/institution', '/admin', '/conductor'];
   if (hidePaths.some(path => location.pathname.startsWith(path))) return null;
+
+  const scrollTo = (id) => (e) => {
+    e.preventDefault();
+    if (location.pathname !== '/') {
+      navigate('/');
+      // wait for navigation then scroll
+      setTimeout(() => {
+        const el = document.getElementById(id);
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }, 150);
+    } else {
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   return (
     <nav className="official-nav">
@@ -45,9 +61,9 @@ export default function Navbar({ user }) {
         <div className="official-nav__inner">
           <div className="official-nav__links">
             <Link to="/" className="official-nav__link">Home</Link>
-            <a href="#downloads" className="official-nav__link">Downloads</a>
-            <a href="#home" className="official-nav__link">About Portal</a>
-            <a href="#home" className="official-nav__link">Contact KSRTC</a>
+            <a href="#downloads" className="official-nav__link" onClick={scrollTo('downloads')}>Downloads</a>
+            <a href="#about" className="official-nav__link" onClick={scrollTo('about')}>About Portal</a>
+            <a href="#contact" className="official-nav__link" onClick={scrollTo('contact')}>Contact KSRTC</a>
           </div>
         </div>
       </div>

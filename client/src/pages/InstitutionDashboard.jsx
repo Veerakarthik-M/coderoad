@@ -471,6 +471,7 @@ function VerificationLogsTab() {
       )}
     </div>
   );
+}
 // --- PROGRAMME DETAILS TAB (As per Government Portal Spec) ---
 function ProgrammesTab() {
   const [programmes, setProgrammes] = useState([

@@ -25,8 +25,10 @@ const upload = multer({
   storage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB max
   fileFilter: (req, file, cb) => {
-    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
-    if (allowed.includes(file.mimetype)) {
+    const allowedMime = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+    const allowedExts = ['.jpg', '.jpeg', '.png', '.webp', '.pdf'];
+    const ext = extname(file.originalname).toLowerCase();
+    if (allowedMime.includes(file.mimetype) && allowedExts.includes(ext)) {
       cb(null, true);
     } else {
       cb(new Error('Only images (JPEG, PNG, WebP) and PDF files are allowed'));
@@ -53,6 +55,17 @@ router.post('/apply', authMiddleware, requireRole('student'), (req, res) => {
     );
     if (existing) {
       return res.status(409).json({ error: 'You already have an active application' });
+    }
+
+    // Check for duplicate roll number in the same institution
+    if (rollNo && institutionId) {
+      const existingRollNo = queryOne(
+        "SELECT id FROM applications WHERE institution_id = ? AND LOWER(roll_no) = LOWER(?) AND status NOT IN ('rejected')",
+        [institutionId, rollNo]
+      );
+      if (existingRollNo) {
+        return res.status(409).json({ error: 'An active application with this Roll Number already exists for the selected institution.' });
+      }
     }
 
     const appId = execute(

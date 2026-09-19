@@ -74,7 +74,11 @@ router.post('/register', async (req, res) => {
     }
 
     if (username) {
-      const existingUsername = queryOne('SELECT id FROM users WHERE LOWER(username) = LOWER(?)', [username.trim()]);
+      const cleanUsername = username.trim();
+      if (!/^[a-zA-Z0-9_]+$/.test(cleanUsername)) {
+        return res.status(400).json({ error: 'Username can only contain letters, numbers, and underscores.' });
+      }
+      const existingUsername = queryOne('SELECT id FROM users WHERE LOWER(username) = LOWER(?)', [cleanUsername]);
       if (existingUsername) {
         return res.status(409).json({ error: 'Username is already taken. Please choose another.' });
       }
