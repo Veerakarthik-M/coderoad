@@ -1,4 +1,4 @@
-﻿// Auth routes â€” register and login for all roles
+// Auth routes â€” register and login for all roles
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -45,16 +45,38 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // Check existing user
-    const existing = queryOne('SELECT id FROM users WHERE email = ?', [email]);
-    if (existing) {
-      return res.status(409).json({ error: 'Email already registered' });
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Please provide a valid email address' });
+    }
+
+    // Validate phone number format if provided
+    if (phone) {
+      const cleanPhone = phone.replace(/\D/g, '');
+      if (!/^[6-9]\d{9}$/.test(cleanPhone) || /^(\d)\1{9}$/.test(cleanPhone)) {
+        return res.status(400).json({ error: 'Please enter a valid 10-digit Indian phone number' });
+      }
+    }
+
+    // Check existing email
+    const existingEmail = queryOne('SELECT id FROM users WHERE LOWER(email) = LOWER(?)', [email.trim()]);
+    if (existingEmail) {
+      return res.status(409).json({ error: 'This email address is already registered. Please login or use another email.' });
+    }
+
+    // Check existing phone number if provided
+    if (phone) {
+      const existingPhone = queryOne('SELECT id FROM users WHERE phone = ?', [phone.trim()]);
+      if (existingPhone) {
+        return res.status(409).json({ error: 'This phone number is already registered with an existing account.' });
+      }
     }
 
     if (username) {
-      const existingUsername = queryOne('SELECT id FROM users WHERE username = ?', [username]);
+      const existingUsername = queryOne('SELECT id FROM users WHERE LOWER(username) = LOWER(?)', [username.trim()]);
       if (existingUsername) {
-        return res.status(409).json({ error: 'Username already taken' });
+        return res.status(409).json({ error: 'Username is already taken. Please choose another.' });
       }
     }
 

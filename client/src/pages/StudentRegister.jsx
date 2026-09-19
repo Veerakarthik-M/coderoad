@@ -163,10 +163,33 @@ export default function StudentRegister({ onAuth }) {
       if (!form.studentType) errors.studentType = 'Please select a student type';
     } else if (step === 1) {
       if (!form.name.trim()) errors.name = 'Full name is required';
-      if (!form.dateOfBirth) errors.dateOfBirth = 'Date of birth is required';
+      
+      if (!form.dateOfBirth) {
+        errors.dateOfBirth = 'Date of birth is required';
+      } else {
+        const age = calcAge(form.dateOfBirth);
+        if (new Date(form.dateOfBirth) > new Date()) {
+          errors.dateOfBirth = 'Date of birth cannot be in the future';
+        } else if (age < 5 || age > 100) {
+          errors.dateOfBirth = 'Age must be between 5 and 100 years';
+        }
+      }
+
       if (!form.gender) errors.gender = 'Please select a gender';
       if (!form.guardianName.trim()) errors.guardianName = 'Guardian name is required';
-      if (!form.phone.match(/^[6-9]\d{9}$/)) errors.phone = 'Enter a valid 10-digit mobile number';
+      
+      const cleanPhone = form.phone.replace(/\D/g, '');
+      if (!cleanPhone.match(/^[6-9]\d{9}$/) || /^(\d)\1{9}$/.test(cleanPhone)) {
+        errors.phone = 'Enter a valid 10-digit mobile number (e.g. 9876543210)';
+      }
+
+      if (form.aadhaarNumber) {
+        const cleanAadhaar = form.aadhaarNumber.replace(/\D/g, '');
+        if (!cleanAadhaar.match(/^\d{12}$/) || /^(\d)\1{11}$/.test(cleanAadhaar)) {
+          errors.aadhaarNumber = 'Aadhaar number must be a valid 12-digit number';
+        }
+      }
+
       if (!form.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) errors.email = 'Enter a valid email address';
       if (!form.username.trim()) errors.username = 'Username is required';
       if (form.password.length < 6) errors.password = 'Password must be at least 6 characters';
@@ -440,6 +463,7 @@ export default function StudentRegister({ onAuth }) {
                 <div className="form-group">
                   <label className="form-label" htmlFor="p-aadhaar">Aadhaar Number</label>
                   <input id="p-aadhaar" className="form-input" value={form.aadhaarNumber} onChange={e => set('aadhaarNumber', e.target.value)} placeholder="XXXX XXXX XXXX" maxLength={14} />
+                  <FieldError msg={fieldErrors.aadhaarNumber} />
                 </div>
               </div>
 
