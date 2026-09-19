@@ -88,13 +88,23 @@ export default function Landing({ user, onAuth }) {
         <div className="container" style={{ position: 'relative', zIndex: 2, paddingTop: '2.5rem', paddingBottom: '2.5rem' }}>
           <div className="landing-hero__two-col">
             <div className="landing-hero__left">
-              <div className="hero-action-row" id="downloads">
-                <span className="hero-action-row__label">Download Registered Schools List</span>
-                <a href="#" className="hero-action-row__btn">Click Here</a>
-              </div>
-              <div className="hero-action-row">
-                <span className="hero-action-row__label">Download Instructions</span>
-                <a href="#" className="hero-action-row__btn">Click Here</a>
+              <div id="downloads">
+                <div className="hero-action-row">
+                  <span className="hero-action-row__label">📄 Form 26 — Student Concession Application</span>
+                  <a href="/forms/form-26-concession.html" target="_blank" rel="noopener" className="hero-action-row__btn">Download</a>
+                </div>
+                <div className="hero-action-row">
+                  <span className="hero-action-row__label">📋 Instructions &amp; Eligibility Guide</span>
+                  <a href="/forms/instructions.html" target="_blank" rel="noopener" className="hero-action-row__btn">Download</a>
+                </div>
+                <div className="hero-action-row">
+                  <span className="hero-action-row__label">🏫 Institution Registration Form</span>
+                  <a href="/forms/institution-registration.html" target="_blank" rel="noopener" className="hero-action-row__btn">Download</a>
+                </div>
+                <div className="hero-action-row">
+                  <span className="hero-action-row__label">🔄 Pass Renewal Application Form</span>
+                  <a href="/forms/form-26-concession.html" target="_blank" rel="noopener" className="hero-action-row__btn">Download</a>
+                </div>
               </div>
               <div className="hero-action-group">
                 <h3 className="hero-action-group__title">Apply For New Student Concession</h3>

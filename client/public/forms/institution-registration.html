@@ -1,0 +1,134 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KSRTC - Institution Registration Form</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Times New Roman',Times,serif;font-size:13px;color:#000;background:#fff;padding:20px}
+    .page{max-width:750px;margin:0 auto;border:2px solid #000;padding:24px 30px}
+    .header{text-align:center;border-bottom:2px solid #000;padding-bottom:12px;margin-bottom:16px}
+    .header .title-main{font-size:17px;font-weight:bold;letter-spacing:.5px}
+    .header .title-sub{font-size:13px;font-weight:bold;margin-top:4px}
+    .header .form-no{font-size:12px;margin-top:4px}
+    .sec-title{font-weight:bold;font-size:13px;background:#e8e8e8;padding:4px 8px;border:1px solid #000;margin:14px 0 8px}
+    .fl{display:flex;gap:0;margin-bottom:8px;align-items:flex-end}
+    .flabel{min-width:210px;flex-shrink:0;font-size:12.5px;padding-right:8px}
+    .fline{flex:1;border-bottom:1px solid #000;min-height:18px}
+    .fcol{padding:0 4px}
+    .two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .cb-row{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;margin:8px 0;align-items:center}
+    .cb-item{display:flex;align-items:center;gap:5px}
+    .box{width:14px;height:14px;border:1px solid #000;display:inline-block;vertical-align:middle}
+    .declaration{margin-top:14px;font-size:12px;line-height:1.7;border:1px solid #000;padding:10px;background:#fafafa}
+    .sig-row{display:flex;justify-content:space-between;margin-top:24px;gap:20px}
+    .sig-block{text-align:center;flex:1}
+    .sig-line{border-top:1px solid #000;margin-top:40px;margin-bottom:4px}
+    .sig-label{font-size:11px;font-weight:bold}
+    .office-use{border:1px solid #000;padding:10px;margin-top:14px}
+    .office-use-title{font-weight:bold;font-size:12px;margin-bottom:8px;border-bottom:1px dashed #000;padding-bottom:4px}
+    table{width:100%;border-collapse:collapse;font-size:12px;margin:8px 0}
+    table th,table td{border:1px solid #000;padding:5px 8px}
+    table th{background:#e8e8e8;font-weight:bold}
+    .note{font-size:11px;font-style:italic;text-align:center;margin-top:10px}
+    @media print{body{padding:0}.page{border:none;max-width:100%}.no-print{display:none}}
+    .print-btn{display:block;margin:0 auto 20px;padding:10px 32px;background:#064e3b;color:white;border:none;border-radius:6px;font-size:14px;font-weight:bold;cursor:pointer;font-family:sans-serif}
+  </style>
+</head>
+<body>
+<div class="no-print" style="text-align:center;padding:14px;font-family:sans-serif">
+  <p style="font-size:13px;color:#555;margin-bottom:12px">Print and submit to your nearest KSRTC District Office.</p>
+  <button class="print-btn" onclick="window.print()">Print / Save as PDF</button>
+</div>
+<div class="page">
+  <div class="header">
+    <div class="title-main">KERALA STATE ROAD TRANSPORT CORPORATION</div>
+    <div class="title-sub">INSTITUTION REGISTRATION FORM — STUDENT CONCESSION SYSTEM</div>
+    <div class="form-no">Form No: KSRTC / IRF-01 / 2026 | ANAVANDI Digital Portal</div>
+  </div>
+
+  <div class="sec-title">PART A — BASIC INSTITUTION DETAILS</div>
+  <div class="fl"><span class="flabel">Name of Institution</span><span class="fcol">:</span><span class="fline"></span></div>
+  <div class="fl"><span class="flabel">Institution Type</span></div>
+  <div class="cb-row">
+    <span class="cb-item"><span class="box"></span> Government School</span>
+    <span class="cb-item"><span class="box"></span> Aided School</span>
+    <span class="cb-item"><span class="box"></span> Un-aided School</span>
+    <span class="cb-item"><span class="box"></span> Government College</span>
+    <span class="cb-item"><span class="box"></span> Aided College</span>
+    <span class="cb-item"><span class="box"></span> Autonomous College</span>
+    <span class="cb-item"><span class="box"></span> University</span>
+    <span class="cb-item"><span class="box"></span> Polytechnic / ITI</span>
+    <span class="cb-item"><span class="box"></span> Other</span>
+  </div>
+  <div class="fl"><span class="flabel">Affiliation / University</span><span class="fcol">:</span><span class="fline"></span></div>
+  <div class="fl"><span class="flabel">UDISE / AISHE Code (if any)</span><span class="fcol">:</span><span class="fline"></span></div>
+  <div class="fl"><span class="flabel">Year of Establishment</span><span class="fcol">:</span><span class="fline" style="max-width:100px"></span></div>
+
+  <div class="sec-title">PART B — ADDRESS &amp; LOCATION</div>
+  <div class="fl"><span class="flabel">Complete Address</span><span class="fcol">:</span><span class="fline"></span></div>
+  <div class="two-col">
+    <div class="fl" style="margin-bottom:0"><span class="flabel" style="min-width:70px">Place</span><span class="fcol">:</span><span class="fline"></span></div>
+    <div class="fl" style="margin-bottom:0"><span class="flabel" style="min-width:70px">Post Office</span><span class="fcol">:</span><span class="fline"></span></div>
+  </div>
+  <div class="two-col" style="margin-top:8px">
+    <div class="fl" style="margin-bottom:0"><span class="flabel" style="min-width:70px">PIN Code</span><span class="fcol">:</span><span class="fline"></span></div>
+    <div class="fl" style="margin-bottom:0"><span class="flabel" style="min-width:70px">District</span><span class="fcol">:</span><span class="fline"></span></div>
+  </div>
+  <div class="fl" style="margin-top:8px"><span class="flabel">Nearest KSRTC Bus Stop</span><span class="fcol">:</span><span class="fline"></span></div>
+  <div class="fl"><span class="flabel">Common Student Routes (from)</span><span class="fcol">:</span><span class="fline"></span></div>
+
+  <div class="sec-title">PART C — AUTHORIZED REPRESENTATIVE DETAILS</div>
+  <div class="fl"><span class="flabel">Name of Head of Institution</span><span class="fcol">:</span><span class="fline"></span></div>
+  <div class="fl"><span class="flabel">Designation</span><span class="fcol">:</span><span class="fline"></span></div>
+  <div class="two-col">
+    <div class="fl" style="margin-bottom:0"><span class="flabel" style="min-width:90px">Official Mobile</span><span class="fcol">:</span><span class="fline"></span></div>
+    <div class="fl" style="margin-bottom:0"><span class="flabel" style="min-width:90px">Official Email</span><span class="fcol">:</span><span class="fline"></span></div>
+  </div>
+  <div class="fl" style="margin-top:8px"><span class="flabel">Name of Concession In-charge</span><span class="fcol">:</span><span class="fline"></span></div>
+  <div class="fl"><span class="flabel">Concession In-charge Mobile</span><span class="fcol">:</span><span class="fline"></span></div>
+  <div class="fl"><span class="flabel">Concession In-charge Email</span><span class="fcol">:</span><span class="fline"></span></div>
+
+  <div class="sec-title">PART D — STUDENT STRENGTH</div>
+  <table>
+    <tr><th>Category</th><th>Total Enrolment</th><th>Approx. KSRTC Users</th><th>Common Routes</th></tr>
+    <tr><td>School (Class 8–10)</td><td></td><td></td><td></td></tr>
+    <tr><td>School (Class 11–12)</td><td></td><td></td><td></td></tr>
+    <tr><td>UG (Degree / B.Tech)</td><td></td><td></td><td></td></tr>
+    <tr><td>PG / Diploma / ITI</td><td></td><td></td><td></td></tr>
+  </table>
+
+  <div class="sec-title">DOCUMENTS TO ATTACH</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px">
+    <div class="cb-item"><span class="box"></span> Institution Registration Certificate</div>
+    <div class="cb-item"><span class="box"></span> UDISE / AISHE Certificate (if applicable)</div>
+    <div class="cb-item"><span class="box"></span> Affiliation / Recognition Certificate</div>
+    <div class="cb-item"><span class="box"></span> Address proof (Electricity Bill / Tax Receipt)</div>
+    <div class="cb-item"><span class="box"></span> ID of Authorized Representative (Aadhaar)</div>
+    <div class="cb-item"><span class="box"></span> List of Programmes / Courses Offered</div>
+  </div>
+
+  <div class="declaration">
+    <strong>UNDERTAKING BY HEAD OF INSTITUTION:</strong><br>
+    I hereby certify that the information provided above is true and correct. I undertake to verify student enrollment details accurately before approving concession pass applications. I understand that false certification or misuse of the portal will result in deregistration of the institution and legal proceedings as applicable under KSRTC Act and Kerala State laws.
+  </div>
+
+  <div class="sig-row">
+    <div class="sig-block"><div class="sig-line"></div><div class="sig-label">Date: _______________</div></div>
+    <div class="sig-block"><div class="sig-line"></div><div class="sig-label">Seal &amp; Signature of Head of Institution</div></div>
+  </div>
+
+  <div class="office-use">
+    <div class="office-use-title">FOR KSRTC DISTRICT OFFICE USE ONLY</div>
+    <div class="fl"><span class="flabel">Institution Reg. No. (KSRTC)</span><span class="fcol">:</span><span class="fline"></span></div>
+    <div class="fl"><span class="flabel">Registered On</span><span class="fcol">:</span><span class="fline" style="max-width:120px"></span><span class="flabel" style="min-width:90px;padding-left:12px">Valid Until</span><span class="fcol">:</span><span class="fline"></span></div>
+    <div class="sig-row" style="margin-top:16px">
+      <div class="sig-block"><div class="sig-line"></div><div class="sig-label">Verifying Officer</div></div>
+      <div class="sig-block"><div class="sig-line"></div><div class="sig-label">District Manager (KSRTC)</div></div>
+    </div>
+  </div>
+  <div class="note">Submit completed form at your nearest KSRTC District Office or register online at ANAVANDI Portal</div>
+</div>
+</body>
+</html>

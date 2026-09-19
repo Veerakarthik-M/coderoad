@@ -1,0 +1,139 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Form 26 - KSRTC Student Concession Application</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Times New Roman',Times,serif;font-size:13px;color:#000;background:#fff;padding:20px}
+    .page{max-width:750px;margin:0 auto;border:2px solid #000;padding:24px 30px}
+    .header{text-align:center;border-bottom:2px solid #000;padding-bottom:12px;margin-bottom:16px}
+    .header .title-main{font-size:18px;font-weight:bold;letter-spacing:1px}
+    .header .title-sub{font-size:13px;font-weight:bold;margin-top:4px}
+    .header .form-no{font-size:12px;margin-top:4px}
+    .sec-title{font-weight:bold;font-size:13px;background:#e8e8e8;padding:4px 8px;border:1px solid #000;margin:14px 0 8px}
+    .fl{display:flex;gap:0;margin-bottom:8px;align-items:flex-end}
+    .flabel{min-width:200px;flex-shrink:0;font-size:12.5px;padding-right:8px}
+    .fline{flex:1;border-bottom:1px solid #000;min-height:18px}
+    .fcol{padding:0 4px}
+    .two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .photo-box{float:right;width:100px;height:120px;border:1px solid #000;text-align:center;font-size:10px;padding:4px;display:flex;flex-direction:column;align-items:center;justify-content:space-between}
+    .declaration{margin-top:14px;font-size:12px;line-height:1.7;border:1px solid #000;padding:10px;background:#fafafa}
+    .sig-row{display:flex;justify-content:space-between;margin-top:24px;gap:20px}
+    .sig-block{text-align:center;flex:1}
+    .sig-line{border-top:1px solid #000;margin-top:40px;margin-bottom:4px}
+    .sig-label{font-size:11px;font-weight:bold}
+    .office-use{border:1px solid #000;padding:10px;margin-top:14px;font-size:11px}
+    .office-use-title{font-weight:bold;font-size:12px;margin-bottom:8px;border-bottom:1px dashed #000;padding-bottom:4px}
+    .box{width:14px;height:14px;border:1px solid #000;display:inline-block;vertical-align:middle}
+    .cb-row{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;margin:8px 0}
+    .cb-item{display:flex;align-items:center;gap:5px}
+    table{width:100%;border-collapse:collapse;margin:8px 0;font-size:12px}
+    table th,table td{border:1px solid #000;padding:5px 8px;text-align:left}
+    table th{background:#e8e8e8;font-weight:bold}
+    .note{font-size:11px;color:#333;margin-top:8px;font-style:italic;text-align:center}
+    .clearfix::after{content:'';display:table;clear:both}
+    @media print{body{padding:0}.page{border:none;max-width:100%}.no-print{display:none}}
+    .print-btn{display:block;margin:0 auto 20px;padding:10px 32px;background:#064e3b;color:white;border:none;border-radius:6px;font-size:14px;font-weight:bold;cursor:pointer;font-family:sans-serif}
+    .print-btn:hover{background:#047857}
+  </style>
+</head>
+<body>
+<div class="no-print" style="text-align:center;padding:16px 0;font-family:sans-serif">
+  <p style="font-size:13px;color:#555;margin-bottom:12px">Print this form and submit to your institution for verification.</p>
+  <button class="print-btn" onclick="window.print()">Print / Save as PDF</button>
+</div>
+<div class="page">
+  <div class="header">
+    <div class="title-main">KERALA STATE ROAD TRANSPORT CORPORATION</div>
+    <div class="title-sub">STUDENT BUS CONCESSION PASS - APPLICATION FORM</div>
+    <div class="form-no">Form No: KSRTC / F-26 / 2026 | (For New Application / Renewal) | ANAVANDI Digital Portal</div>
+  </div>
+  <div class="clearfix">
+    <div class="photo-box">
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;font-size:9.5px;color:#555;text-align:center">Paste<br>Passport<br>Size Photo<br>Here</div>
+      <div style="border-top:1px solid #000;width:100%;text-align:center;padding-top:2px;font-size:9px">Signature</div>
+    </div>
+    <div class="sec-title">PART A - STUDENT DETAILS</div>
+    <div class="fl"><span class="flabel">Full Name (As per ID)</span><span class="fcol">:</span><span class="fline"></span></div>
+    <div class="fl"><span class="flabel">Date of Birth</span><span class="fcol">:</span><span class="fline" style="max-width:110px"></span><span class="flabel" style="min-width:50px;padding-left:12px">Age</span><span class="fcol">:</span><span class="fline" style="max-width:50px"></span><span class="flabel" style="min-width:65px;padding-left:12px">Gender</span><span class="fcol">:</span><span class="fline" style="max-width:70px"></span></div>
+    <div class="fl"><span class="flabel">Father / Guardian Name</span><span class="fcol">:</span><span class="fline"></span></div>
+    <div class="fl"><span class="flabel">Aadhaar Number</span><span class="fcol">:</span><span class="fline" style="max-width:160px"></span><span class="flabel" style="min-width:90px;padding-left:12px">Mobile No.</span><span class="fcol">:</span><span class="fline"></span></div>
+    <div class="fl"><span class="flabel">Email Address</span><span class="fcol">:</span><span class="fline"></span></div>
+  </div>
+  <div class="sec-title">PART B - RESIDENTIAL ADDRESS</div>
+  <div class="fl"><span class="flabel">House Name / Number &amp; Street</span><span class="fcol">:</span><span class="fline"></span></div>
+  <div class="two-col" style="margin-bottom:8px">
+    <div class="fl" style="margin-bottom:0"><span class="flabel" style="min-width:70px">Place</span><span class="fcol">:</span><span class="fline"></span></div>
+    <div class="fl" style="margin-bottom:0"><span class="flabel" style="min-width:70px">Post Office</span><span class="fcol">:</span><span class="fline"></span></div>
+  </div>
+  <div class="two-col">
+    <div class="fl" style="margin-bottom:0"><span class="flabel" style="min-width:70px">PIN Code</span><span class="fcol">:</span><span class="fline"></span></div>
+    <div class="fl" style="margin-bottom:0"><span class="flabel" style="min-width:70px">District</span><span class="fcol">:</span><span class="fline"></span></div>
+  </div>
+  <div class="sec-title">PART C - INSTITUTION DETAILS</div>
+  <div class="fl"><span class="flabel">Name of Institution</span><span class="fcol">:</span><span class="fline"></span></div>
+  <div class="fl"><span class="flabel">Institution Address</span><span class="fcol">:</span><span class="fline"></span></div>
+  <div class="cb-row">
+    <strong style="font-size:12.5px">Student Type:</strong>
+    <span class="cb-item"><span class="box"></span> School (Class 8-12)</span>
+    <span class="cb-item"><span class="box"></span> College / University (UG/PG)</span>
+    <span class="cb-item"><span class="box"></span> Polytechnic / ITI / Diploma</span>
+  </div>
+  <div class="two-col">
+    <div class="fl" style="margin-bottom:0"><span class="flabel" style="min-width:110px">Roll / Admission No.</span><span class="fcol">:</span><span class="fline"></span></div>
+    <div class="fl" style="margin-bottom:0"><span class="flabel" style="min-width:110px">Academic Year</span><span class="fcol">:</span><span class="fline"></span></div>
+  </div>
+  <div class="two-col" style="margin-top:8px">
+    <div class="fl" style="margin-bottom:0"><span class="flabel" style="min-width:110px">Course / Programme</span><span class="fcol">:</span><span class="fline"></span></div>
+    <div class="fl" style="margin-bottom:0"><span class="flabel" style="min-width:110px">Year / Semester</span><span class="fcol">:</span><span class="fline"></span></div>
+  </div>
+  <div class="fl" style="margin-top:8px"><span class="flabel">Department / Branch</span><span class="fcol">:</span><span class="fline"></span></div>
+  <div class="sec-title">PART D - ROUTE / TRAVEL DETAILS</div>
+  <div class="fl"><span class="flabel">Boarding Point (From)</span><span class="fcol">:</span><span class="fline"></span></div>
+  <div class="fl"><span class="flabel">Destination (To)</span><span class="fcol">:</span><span class="fline"></span></div>
+  <div class="two-col">
+    <div class="fl" style="margin-bottom:0"><span class="flabel" style="min-width:110px">Approx. Distance (km)</span><span class="fcol">:</span><span class="fline"></span></div>
+    <div class="fl" style="margin-bottom:0"><span class="flabel" style="min-width:110px">Concession Category</span><span class="fcol">:</span><span class="fline"></span></div>
+  </div>
+  <div style="font-size:11px;font-style:italic;margin-top:4px">Category: General / SC / ST / OBC / Differently Abled</div>
+  <div class="sec-title">DOCUMENTS ATTACHED (tick applicable)</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px">
+    <div class="cb-item"><span class="box"></span> Institution ID Card (Photocopy)</div>
+    <div class="cb-item"><span class="box"></span> Aadhaar Card (Photocopy)</div>
+    <div class="cb-item"><span class="box"></span> Passport Size Photo (2 nos.)</div>
+    <div class="cb-item"><span class="box"></span> Bonafide Certificate from Institution</div>
+    <div class="cb-item"><span class="box"></span> Previous Pass (for Renewal only)</div>
+    <div class="cb-item"><span class="box"></span> Caste Certificate (if applicable)</div>
+  </div>
+  <div class="declaration">
+    <strong>DECLARATION BY APPLICANT:</strong><br>
+    I hereby declare that the information furnished above is true and correct to the best of my knowledge. I understand that the concession pass is non-transferable and shall be used only for travelling between the declared boarding point and destination. I agree to abide by all KSRTC rules and regulations governing the use of student concession passes. I undertake to produce the pass on demand and to surrender it on cessation of my student status.
+  </div>
+  <div class="sig-row">
+    <div class="sig-block"><div class="sig-line"></div><div class="sig-label">Date: _______________</div></div>
+    <div class="sig-block"><div class="sig-line"></div><div class="sig-label">Signature of Parent / Guardian</div></div>
+    <div class="sig-block"><div class="sig-line"></div><div class="sig-label">Signature of Applicant</div></div>
+  </div>
+  <div class="office-use">
+    <div class="office-use-title">FOR INSTITUTION USE ONLY</div>
+    <div class="fl"><span class="flabel">Roll No. Verified</span><span class="fcol">:</span><span class="fline"></span></div>
+    <div class="fl"><span class="flabel">Course Enrolled</span><span class="fcol">:</span><span class="fline"></span></div>
+    <div class="sig-row" style="margin-top:16px">
+      <div class="sig-block"><div class="sig-line"></div><div class="sig-label">Signature of Class Teacher</div></div>
+      <div class="sig-block"><div class="sig-line"></div><div class="sig-label">Seal &amp; Signature of Head of Institution</div></div>
+    </div>
+  </div>
+  <div class="office-use" style="margin-top:12px">
+    <div class="office-use-title">FOR KSRTC OFFICE USE ONLY</div>
+    <table><tr><th>Pass No.</th><th>Issued Date</th><th>Valid From</th><th>Valid To</th><th>Issuing Officer</th></tr><tr><td style="height:26px"></td><td></td><td></td><td></td><td></td></tr></table>
+    <div class="sig-row" style="margin-top:16px">
+      <div class="sig-block"><div class="sig-line"></div><div class="sig-label">Receiving Clerk</div></div>
+      <div class="sig-block"><div class="sig-line"></div><div class="sig-label">Issuing Officer (KSRTC)</div></div>
+    </div>
+  </div>
+  <div class="note">This form is available online at ANAVANDI Portal - Kerala KSRTC Student Concession System</div>
+</div>
+</body>
+</html>
