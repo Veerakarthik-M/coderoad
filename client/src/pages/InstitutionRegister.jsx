@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api';
 
@@ -8,17 +8,50 @@ const KERALA_DISTRICTS = [
   'Kozhikode', 'Wayanad', 'Kannur', 'Kasaragod'
 ];
 
+const INST_DRAFT_KEY = 'anavandi_inst_draft_v1';
+
+const INITIAL_INST_FORM = {
+  institutionName: '', place: '', postalName: '', pincode: '', district: '',
+  institutionType: '', educationLevel: '', headName: '',
+  affiliationUniversity: '', affiliationNumber: '',
+  name: '', email: '', phone: '', password: '', confirmPassword: ''
+};
+
+function getSavedInstDraft() {
+  try {
+    const raw = localStorage.getItem(INST_DRAFT_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        return { form: { ...INITIAL_INST_FORM, ...parsed }, isDraft: true };
+      }
+    }
+  } catch (_) {}
+  return { form: INITIAL_INST_FORM, isDraft: false };
+}
+
 export default function InstitutionRegister({ onAuth }) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const initialDraft = useRef(getSavedInstDraft()).current;
+  const [form, setForm] = useState(initialDraft.form);
+  const [hasRestoredDraft, setHasRestoredDraft] = useState(
+    initialDraft.isDraft && Object.values(initialDraft.form).some(v => v)
+  );
 
-  const [form, setForm] = useState({
-    institutionName: '', place: '', postalName: '', pincode: '', district: '',
-    institutionType: '', educationLevel: '', headName: '',
-    affiliationUniversity: '', affiliationNumber: '',
-    name: '', email: '', phone: '', password: '', confirmPassword: ''
-  });
+  // Auto-save form to draft
+  useEffect(() => {
+    try {
+      localStorage.setItem(INST_DRAFT_KEY, JSON.stringify(form));
+    } catch (_) {}
+  }, [form]);
+
+  const handleClearDraft = () => {
+    try { localStorage.removeItem(INST_DRAFT_KEY); } catch (_) {}
+    setForm(INITIAL_INST_FORM);
+    setHasRestoredDraft(false);
+  };
 
   const updateForm = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
 
@@ -85,6 +118,7 @@ export default function InstitutionRegister({ onAuth }) {
         affiliationNumber: form.affiliationNumber
       });
       onAuth(data.user, data.token);
+      try { localStorage.removeItem(INST_DRAFT_KEY); } catch (_) {}
       navigate('/institution');
     } catch (err) {
       setError(err.message);
@@ -100,6 +134,41 @@ export default function InstitutionRegister({ onAuth }) {
           <h1 className="page-title">Institution Registration</h1>
           <p className="page-subtitle">Register your school or college to approve student concessions</p>
         </div>
+
+        {hasRestoredDraft && (
+          <div style={{
+            background: '#ecfdf5',
+            border: '1px solid #a7f3d0',
+            borderRadius: '8px',
+            padding: '0.625rem 0.875rem',
+            marginBottom: '1rem',
+            fontSize: '0.8125rem',
+            color: '#065f46',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '0.5rem'
+          }}>
+            <span>💾 <strong>Draft Restored:</strong> Your previously filled institution details were preserved.</span>
+            <button
+              type="button"
+              onClick={handleClearDraft}
+              style={{
+                background: '#ffffff',
+                border: '1px solid #6ee7b7',
+                borderRadius: '4px',
+                color: '#047857',
+                fontWeight: 700,
+                fontSize: '0.75rem',
+                padding: '0.2rem 0.5rem',
+                cursor: 'pointer'
+              }}
+            >
+              Clear & Start Over
+            </button>
+          </div>
+        )}
 
         {error && <div className="alert alert-error">⚠️ {error}</div>}
 

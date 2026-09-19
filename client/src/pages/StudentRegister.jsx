@@ -269,21 +269,80 @@ function FileUpload({ label, id, accept, hint, onFile, file, required = false })
 }
 
 
+const STUDENT_DRAFT_KEY = 'anavandi_student_draft_v1';
+
+function getSavedDraft() {
+  try {
+    const raw = localStorage.getItem(STUDENT_DRAFT_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed.form === 'object') {
+        return {
+          form: { ...INITIAL_FORM, ...parsed.form },
+          step: typeof parsed.step === 'number' ? Math.min(Math.max(parsed.step, 0), 5) : 0,
+          isDraft: true,
+        };
+      }
+    }
+  } catch (_) {}
+  return { form: INITIAL_FORM, step: 0, isDraft: false };
+}
+
 // ── Main Component ───────────────────────────────────────────
 export default function StudentRegister({ onAuth }) {
   const navigate = useNavigate();
-  const [step, setStep] = useState(0);
+  const initialDraft = useRef(getSavedDraft()).current;
+  const [step, setStep] = useState(initialDraft.step);
   const [loading, setLoading] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
   const [institutions, setInstitutions] = useState([]);
-  const [form, setForm] = useState(INITIAL_FORM);
+  const [form, setForm] = useState(initialDraft.form);
+  const [hasRestoredDraft, setHasRestoredDraft] = useState(
+    initialDraft.isDraft && Object.values(initialDraft.form).some(v => v && v !== '2026-27' && v !== 'college' && v !== 'General')
+  );
   const [emailVerified, setEmailVerified] = useState(false);
   const [idCardFile, setIdCardFile] = useState(null);
   const [photoFile, setPhotoFile] = useState(null);
   const [form1File, setForm1File] = useState(null);
   const [rationFile, setRationFile] = useState(null);
   const [uploadedDocId, setUploadedDocId] = useState(null);
+
+  // Auto-save form & step to draft
+  useEffect(() => {
+    try {
+      localStorage.setItem(STUDENT_DRAFT_KEY, JSON.stringify({ form, step }));
+    } catch (_) {}
+  }, [form, step]);
+
+  // Sync browser back/forward buttons with wizard steps
+  useEffect(() => {
+    try {
+      window.history.replaceState({ studentRegStep: step }, '', window.location.href);
+    } catch (_) {}
+
+    const onPopState = (e) => {
+      if (e.state && typeof e.state.studentRegStep === 'number') {
+        setStep(e.state.studentRegStep);
+      }
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
+  const handleStepChange = (newStep) => {
+    setStep(newStep);
+    try {
+      window.history.pushState({ studentRegStep: newStep }, '', window.location.href);
+    } catch (_) {}
+  };
+
+  const handleClearDraft = () => {
+    try { localStorage.removeItem(STUDENT_DRAFT_KEY); } catch (_) {}
+    setForm(INITIAL_FORM);
+    setStep(0);
+    setHasRestoredDraft(false);
+  };
 
   useEffect(() => {
     api.get('/auth/institutions').then(setInstitutions).catch(console.error);
@@ -369,7 +428,7 @@ export default function StudentRegister({ onAuth }) {
       return;
     }
     setFieldErrors({});
-    setStep(s => s + 1);
+    handleStepChange(step + 1);
   };
 
   const uploadDoc = async (file, docType, applicationId) => {
@@ -443,6 +502,9 @@ export default function StudentRegister({ onAuth }) {
       if (form1File) await uploadDoc(form1File, 'form1', appId);
       if (rationFile) await uploadDoc(rationFile, 'ration', appId);
 
+      // 4. Clear saved draft on successful submission
+      try { localStorage.removeItem(STUDENT_DRAFT_KEY); } catch (_) {}
+
       navigate('/student');
     } catch (err) {
       setSubmitError(err.message);
@@ -473,6 +535,41 @@ export default function StudentRegister({ onAuth }) {
         </div>
 
         <StepIndicator steps={STEPS} currentStep={step} />
+
+        {hasRestoredDraft && (
+          <div style={{
+            background: '#ecfdf5',
+            border: '1px solid #a7f3d0',
+            borderRadius: '8px',
+            padding: '0.625rem 0.875rem',
+            marginBottom: '1rem',
+            fontSize: '0.8125rem',
+            color: '#065f46',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '0.5rem'
+          }}>
+            <span>💾 <strong>Draft Restored:</strong> Your previously filled details were saved so you didn't lose your work.</span>
+            <button
+              type="button"
+              onClick={handleClearDraft}
+              style={{
+                background: '#ffffff',
+                border: '1px solid #6ee7b7',
+                borderRadius: '4px',
+                color: '#047857',
+                fontWeight: 700,
+                fontSize: '0.75rem',
+                padding: '0.2rem 0.5rem',
+                cursor: 'pointer'
+              }}
+            >
+              Clear & Start Over
+            </button>
+          </div>
+        )}
 
         {submitError && (
           <div className="alert alert--error" style={{ marginBottom: '1rem' }} role="alert">
@@ -954,7 +1051,7 @@ export default function StudentRegister({ onAuth }) {
               <div className="review-section">
                 <div className="review-section__header">
                   <div className="review-section__title">Institution Details</div>
-                  <button className="btn btn--ghost btn--sm" onClick={() => setStep(2)}>Edit</button>
+                  <button className="btn btn--ghost btn--sm" onClick={() => handleStepChange(2)}>Edit</button>
                 </div>
                 <div className="review-fields">
                   {[
@@ -977,7 +1074,7 @@ export default function StudentRegister({ onAuth }) {
               <div className="review-section">
                 <div className="review-section__header">
                   <div className="review-section__title">Travel Details</div>
-                  <button className="btn btn--ghost btn--sm" onClick={() => setStep(3)}>Edit</button>
+                  <button className="btn btn--ghost btn--sm" onClick={() => handleStepChange(3)}>Edit</button>
                 </div>
                 <div className="review-fields">
                   {[
@@ -996,7 +1093,7 @@ export default function StudentRegister({ onAuth }) {
               <div className="review-section">
                 <div className="review-section__header">
                   <div className="review-section__title">Documents Attached</div>
-                  <button className="btn btn--ghost btn--sm" onClick={() => setStep(4)}>Edit</button>
+                  <button className="btn btn--ghost btn--sm" onClick={() => handleStepChange(4)}>Edit</button>
                 </div>
                 <div className="review-fields">
                   <div className="review-field">
@@ -1037,7 +1134,7 @@ export default function StudentRegister({ onAuth }) {
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1.75rem', paddingTop: '1.25rem', borderTop: '1px solid var(--border)' }}>
             <button
               className="btn btn--outline"
-              onClick={() => setStep(s => Math.max(0, s - 1))}
+              onClick={() => handleStepChange(Math.max(0, step - 1))}
               disabled={step === 0}
               id="reg-prev"
             >
