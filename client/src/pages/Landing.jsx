@@ -54,7 +54,7 @@ function HeroLoginPanel({ onAuth }) {
 
           <div className="form-group" style={{ marginBottom: '0.75rem' }}>
             <label className="form-label" htmlFor="hero-email" style={{ fontSize: '0.8125rem' }}>Email / Username</label>
-            <input id="hero-email" type="text" className="form-input" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" style={{ fontSize: '0.875rem' }} required />
+            <input id="hero-email" type="text" className="form-input" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Enter email or username" style={{ fontSize: '0.875rem' }} required />
           </div>
           <div className="form-group" style={{ marginBottom: '0.5rem' }}>
             <label className="form-label" htmlFor="hero-password" style={{ fontSize: '0.8125rem' }}>Password</label>

@@ -35,20 +35,6 @@ export default function Login({ portal: propPortal, onAuth }) {
     }
   };
 
-  const quickLogin = async (em) => {
-    setError('');
-    setLoading(true);
-    try {
-      const data = await api.post('/auth/login', { email: em, password: 'demo123' });
-      onAuth(data.user, data.token);
-      redirect(data.user.role);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const isInstitution = activePortal === 'institution';
   const isKsrtc = activePortal === 'ksrtc';
 
@@ -169,7 +155,7 @@ export default function Login({ portal: propPortal, onAuth }) {
               className="form-input"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder={isInstitution ? 'admin@amrita.edu' : isKsrtc ? 'admin@ksrtc.in' : 'name@example.com'}
+              placeholder={isInstitution ? 'official@institution.edu' : isKsrtc ? 'official@ksrtc.kerala.gov.in' : 'student@email.com'}
               autoComplete="username"
               required
             />
@@ -200,62 +186,7 @@ export default function Login({ portal: propPortal, onAuth }) {
           </button>
         </form>
 
-        <div className="divider">quick demo access</div>
-
-        <div className="quick-logins">
-          {isInstitution ? (
-            <button
-              id="quick-institution"
-              onClick={() => quickLogin('admin@amrita.edu')}
-              className="quick-login-btn"
-              style={{ border: '2px solid #059669', background: '#ecfdf5', gridColumn: '1 / -1' }}
-              disabled={loading}
-              type="button"
-            >
-              <span className="quick-login-btn__role" style={{ color: '#059669', fontWeight: 800 }}>🏫 Institution Admin (Demo)</span>
-              admin@amrita.edu
-            </button>
-          ) : isKsrtc ? (
-            <>
-              <button
-                id="quick-admin"
-                onClick={() => quickLogin('admin@ksrtc.in')}
-                className="quick-login-btn"
-                style={{ border: '2px solid #064e3b', background: '#f0fdf4' }}
-                disabled={loading}
-                type="button"
-              >
-                <span className="quick-login-btn__role" style={{ color: '#064e3b', fontWeight: 800 }}>🚌 KSRTC Admin</span>
-                admin@ksrtc.in
-              </button>
-              <button
-                id="quick-conductor"
-                onClick={() => quickLogin('conductor1@ksrtc.in')}
-                className="quick-login-btn"
-                style={{ border: '2px solid #d97706', background: '#fefce8' }}
-                disabled={loading}
-                type="button"
-              >
-                <span className="quick-login-btn__role" style={{ color: '#d97706', fontWeight: 800 }}>📱 Bus Conductor</span>
-                conductor1@ksrtc.in
-              </button>
-            </>
-          ) : (
-            <button
-              id="quick-student"
-              onClick={() => quickLogin('karthik@student.in')}
-              className="quick-login-btn"
-              style={{ border: '2px solid #2563eb', background: '#eff6ff', gridColumn: '1 / -1' }}
-              disabled={loading}
-              type="button"
-            >
-              <span className="quick-login-btn__role" style={{ color: '#2563eb', fontWeight: 800 }}>🎓 Student (Demo)</span>
-              karthik@student.in
-            </button>
-          )}
-        </div>
-
-        <div style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+        <div style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
           {isInstitution ? (
             <>New institution? <Link to="/register/institution" style={{ color: '#059669', fontWeight: '700' }}>Register Your Institution</Link></>
           ) : isKsrtc ? (
