@@ -24,6 +24,68 @@ function statusBadge(status) {
   return <span className={`badge badge--${cls}`}>{label}</span>;
 }
 
+// Render all attached documents (ID card, photo, form1, ration card)
+function ApplicationDocuments({ app }) {
+  const baseUrl = (import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:3001') + '/uploads/';
+
+  const docs = [];
+  if (app.document_path) docs.push({ label: '🪪 ID Card', path: app.document_path });
+  if (app.photo_path) docs.push({ label: '👤 Photo', path: app.photo_path });
+  if (app.form1_path) docs.push({ label: '📜 Form 1 / Cert', path: app.form1_path });
+  if (app.ration_path) docs.push({ label: '📄 Ration / Aadhaar', path: app.ration_path });
+
+  // Include any extra documents from document_uploads table
+  if (app.documents && Array.isArray(app.documents)) {
+    const typeLabels = {
+      id_card: '🪪 ID Card',
+      photo: '👤 Photo',
+      form1: '📜 Form 1 / Cert',
+      ration: '📄 Ration / Aadhaar'
+    };
+    app.documents.forEach(d => {
+      if (d.stored_path && !docs.some(existing => existing.path === d.stored_path)) {
+        docs.push({
+          label: typeLabels[d.doc_type] || `📎 ${d.original_name || 'Document'}`,
+          path: d.stored_path
+        });
+      }
+    });
+  }
+
+  if (docs.length === 0) return null;
+
+  return (
+    <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', marginTop: '0.35rem' }}>
+      {docs.map((doc, idx) => (
+        <a
+          key={idx}
+          href={`${baseUrl}${doc.path}`}
+          target="_blank"
+          rel="noreferrer"
+          className="btn btn--outline btn--sm"
+          style={{
+            fontSize: '0.6875rem',
+            padding: '0.2rem 0.45rem',
+            borderRadius: '4px',
+            textDecoration: 'none',
+            fontWeight: 700,
+            whiteSpace: 'nowrap',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.25rem',
+            background: '#f8fafc',
+            border: '1px solid #cbd5e1',
+            color: '#0f172a'
+          }}
+          title={`View ${doc.label}`}
+        >
+          {doc.label}
+        </a>
+      ))}
+    </div>
+  );
+}
+
 // --- APPLICATIONS TAB ---
 function ApplicationsTab({ institutionId }) {
   const [applications, setApplications] = useState([]);
@@ -118,19 +180,7 @@ function ApplicationsTab({ institutionId }) {
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
                           Applied: {fmtDate(app.created_at)} · {app.student_email}
                         </div>
-                        {app.document_path && (
-                          <div style={{ marginTop: '0.375rem' }}>
-                            <a 
-                              href={`${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:3001'}/uploads/${app.document_path}`} 
-                              target="_blank" 
-                              rel="noreferrer"
-                              className="btn btn--outline btn--sm"
-                              style={{ fontSize: '0.6875rem', padding: '0.25rem 0.5rem' }}
-                            >
-                              📎 View ID Card
-                            </a>
-                          </div>
-                        )}
+                        <ApplicationDocuments app={app} />
                       </div>
                       {rejectId === app.id ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', minWidth: '200px' }}>
@@ -199,18 +249,7 @@ function ApplicationsTab({ institutionId }) {
                         <td>{app.course}</td>
                         <td>
                           {app.route_from} → {app.route_to}
-                          {app.document_path && (
-                            <div style={{ marginTop: '0.25rem' }}>
-                              <a 
-                                href={`${import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:3001'}/uploads/${app.document_path}`} 
-                                target="_blank" 
-                                rel="noreferrer"
-                                style={{ fontSize: '0.6875rem', color: 'var(--primary)', textDecoration: 'none', fontWeight: 600 }}
-                              >
-                                📎 View ID
-                              </a>
-                            </div>
-                          )}
+                          <ApplicationDocuments app={app} />
                         </td>
                         <td>{statusBadge(app.status)}</td>
                         <td>{fmtDate(app.created_at)}</td>

@@ -104,12 +104,18 @@ export async function getDb() {
       -- Documents (file paths)
       photo_path TEXT,
       document_path TEXT,
+      form1_path TEXT,
+      ration_path TEXT,
       
       rejection_reason TEXT,
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT DEFAULT (datetime('now'))
     )
   `);
+
+  // Migrations for applications documents
+  try { db.run("ALTER TABLE applications ADD COLUMN form1_path TEXT"); } catch (_) {}
+  try { db.run("ALTER TABLE applications ADD COLUMN ration_path TEXT"); } catch (_) {}
 
   db.run(`
     CREATE TABLE IF NOT EXISTS credentials (

@@ -34,6 +34,19 @@ router.get('/applications', authMiddleware, requireRole('institution'), (req, re
       [institution.id]
     );
 
+    const appIds = applications.map(a => a.id);
+    let allDocs = [];
+    if (appIds.length > 0) {
+      allDocs = queryAll(
+        `SELECT id, application_id, doc_type, original_name, stored_path 
+         FROM document_uploads 
+         WHERE application_id IN (${appIds.join(',')})`
+      );
+    }
+    applications.forEach(a => {
+      a.documents = allDocs.filter(d => d.application_id === a.id);
+    });
+
     res.json({ applications, institutionId: institution.id, institution });
   } catch (err) {
     console.error('Get applications error:', err);

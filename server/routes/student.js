@@ -186,8 +186,14 @@ router.post(
           return res.status(403).json({ error: 'Application not found or access denied' });
         }
 
-        // Update the application document path
-        const colName = docType === 'photo' ? 'photo_path' : 'document_path';
+        // Update the application document path based on doc_type
+        const colMap = {
+          photo: 'photo_path',
+          id_card: 'document_path',
+          form1: 'form1_path',
+          ration: 'ration_path',
+        };
+        const colName = colMap[docType] || 'document_path';
         execute(
           `UPDATE applications SET ${colName} = ?, updated_at = datetime('now') WHERE id = ?`,
           [req.file.filename, applicationId]
