@@ -10,6 +10,52 @@ export default function Login({ portal: propPortal, onAuth }) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Student Forgot Password state
+  const [showForgot, setShowForgot] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotPhone, setForgotPhone] = useState('');
+  const [forgotGuardian, setForgotGuardian] = useState('');
+  const [forgotNewPass, setForgotNewPass] = useState('');
+  const [forgotConfirmPass, setForgotConfirmPass] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotError, setForgotError] = useState('');
+  const [forgotSuccess, setForgotSuccess] = useState('');
+
+  const handleForgotSubmit = async (e) => {
+    e.preventDefault();
+    setForgotError('');
+    setForgotSuccess('');
+
+    if (forgotNewPass !== forgotConfirmPass) {
+      return setForgotError('Passwords do not match. Please re-enter.');
+    }
+    if (forgotNewPass.length < 6) {
+      return setForgotError('Password must be at least 6 characters long.');
+    }
+
+    setForgotLoading(true);
+    try {
+      const res = await api.post('/auth/student/reset-password', {
+        email: forgotEmail.trim(),
+        phone: forgotPhone.trim(),
+        guardian_name: forgotGuardian.trim(),
+        new_password: forgotNewPass
+      });
+      setForgotSuccess(res.message || 'Password reset successfully!');
+      setEmail(forgotEmail.trim());
+      setTimeout(() => {
+        setShowForgot(false);
+        setForgotSuccess('');
+        setForgotNewPass('');
+        setForgotConfirmPass('');
+      }, 2000);
+    } catch (err) {
+      setForgotError(err.message || 'Password reset failed. Check your details.');
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
   const redirect = (role) => {
     switch (role) {
       case 'student': navigate('/student'); break;
@@ -161,8 +207,20 @@ export default function Login({ portal: propPortal, onAuth }) {
             />
           </div>
 
-          <div className="form-group" style={{ marginBottom: '1.5rem' }}>
-            <label className="form-label" htmlFor="login-password">Password <span className="req">*</span></label>
+          <div className="form-group" style={{ marginBottom: activePortal === 'student' ? '0.625rem' : '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+              <label className="form-label" htmlFor="login-password" style={{ margin: 0 }}>Password <span className="req">*</span></label>
+              {activePortal === 'student' && (
+                <button
+                  type="button"
+                  onClick={() => { setShowForgot(true); setForgotError(''); setForgotSuccess(''); }}
+                  style={{ background: 'none', border: 'none', color: '#047857', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', padding: 0 }}
+                  id="forgot-password-btn"
+                >
+                  Forgot Password?
+                </button>
+              )}
+            </div>
             <input
               id="login-password"
               type="password"
@@ -200,6 +258,53 @@ export default function Login({ portal: propPortal, onAuth }) {
           )}
         </div>
       </div>
+
+      {/* Student Password Recovery Modal */}
+      {showForgot && (
+        <div className="modal-overlay" style={{ zIndex: 1000 }}>
+          <div className="modal" style={{ maxWidth: '440px', width: '90%' }}>
+            <div className="modal__header">
+              <h3 className="modal__title">🎓 Student Password Recovery</h3>
+              <button className="modal__close" onClick={() => setShowForgot(false)}>✕</button>
+            </div>
+            <div className="modal__body">
+              <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginBottom: '1rem', lineHeight: 1.4 }}>
+                Verify your identity using your registered mobile number and guardian name to safely set a new password.
+              </p>
+              {forgotError && <div className="alert alert--error" style={{ marginBottom: '1rem' }}>{forgotError}</div>}
+              {forgotSuccess && <div className="alert alert--success" style={{ marginBottom: '1rem' }}>{forgotSuccess}</div>}
+              <form onSubmit={handleForgotSubmit}>
+                <div className="form-group" style={{ marginBottom: '0.75rem' }}>
+                  <label className="form-label">Registered Email <span className="req">*</span></label>
+                  <input className="form-input" type="email" required value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} placeholder="student@example.com" />
+                </div>
+                <div className="form-group" style={{ marginBottom: '0.75rem' }}>
+                  <label className="form-label">Registered 10-Digit Mobile Number <span className="req">*</span></label>
+                  <input className="form-input" type="tel" maxLength={10} required value={forgotPhone} onChange={e => setForgotPhone(e.target.value)} placeholder="e.g. 9400012351" />
+                </div>
+                <div className="form-group" style={{ marginBottom: '0.75rem' }}>
+                  <label className="form-label">Father / Guardian's Full Name (as per application)</label>
+                  <input className="form-input" type="text" value={forgotGuardian} onChange={e => setForgotGuardian(e.target.value)} placeholder="Father or Guardian's full name" />
+                </div>
+                <div className="form-group" style={{ marginBottom: '0.75rem' }}>
+                  <label className="form-label">New Password <span className="req">*</span></label>
+                  <input className="form-input" type="password" required minLength={6} value={forgotNewPass} onChange={e => setForgotNewPass(e.target.value)} placeholder="Minimum 6 characters" />
+                </div>
+                <div className="form-group" style={{ marginBottom: '1rem' }}>
+                  <label className="form-label">Confirm New Password <span className="req">*</span></label>
+                  <input className="form-input" type="password" required minLength={6} value={forgotConfirmPass} onChange={e => setForgotConfirmPass(e.target.value)} placeholder="Re-enter new password" />
+                </div>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button type="submit" className="btn btn--primary" style={{ flex: 1, justifyContent: 'center', background: '#064e3b' }} disabled={forgotLoading}>
+                    {forgotLoading ? <span className="spinner" /> : 'Reset Password'}
+                  </button>
+                  <button type="button" className="btn btn--ghost" onClick={() => setShowForgot(false)}>Cancel</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

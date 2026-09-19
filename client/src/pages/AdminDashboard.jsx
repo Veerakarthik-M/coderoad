@@ -103,6 +103,13 @@ export default function AdminDashboard() {
   const [rejectReasonInst, setRejectReasonInst] = useState('');
   const [phoneConfirmed, setPhoneConfirmed] = useState(false);
 
+  // Staff Password Manager State (Conductors & Colleges)
+  const [staffAccounts, setStaffAccounts] = useState([]);
+  const [staffFilter, setStaffFilter] = useState('all');
+  const [staffSearch, setStaffSearch] = useState('');
+  const [genPassModal, setGenPassModal] = useState(null);
+  const [copiedPass, setCopiedPass] = useState(false);
+
   useEffect(() => {
     loadStats();
     loadApplications();
@@ -115,8 +122,45 @@ export default function AdminDashboard() {
     else if (tab === 'institutions') {
       loadInstitutions();
       loadStats();
+    } else if (tab === 'passwords') {
+      loadStaffAccounts();
     }
   }, [tab]);
+
+  const loadStaffAccounts = async () => {
+    setLoading(true);
+    try {
+      const d = await api.get('/admin/staff-accounts');
+      setStaffAccounts(d.staff || []);
+      setPageError(prev => (prev && prev.includes('staff') ? '' : prev));
+    } catch (err) {
+      setPageError('Could not load staff accounts: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGeneratePassword = async (user, customPass = null) => {
+    setActionLoading(user.id);
+    try {
+      const d = await api.post(`/admin/reset-staff-password/${user.id}`, {
+        custom_password: customPass
+      });
+      setGenPassModal({
+        user,
+        password: d.password,
+        role: d.role,
+        email: d.email
+      });
+      setCopiedPass(false);
+      setAlert({ type: 'success', msg: `New password generated for ${user.name}!` });
+      loadStaffAccounts();
+    } catch (err) {
+      setAlert({ type: 'error', msg: err.message });
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   const loadStats = async () => {
     try {
@@ -306,6 +350,7 @@ export default function AdminDashboard() {
             { id: 'applications', label: 'Applications', count: stats?.instApproved, countType: 'amber', countText: `${stats?.instApproved || 0} pending` },
             { id: 'institutions', label: '🏫 Institutions', count: stats?.pendingInstitutions, countType: 'green', countText: `${stats?.pendingInstitutions || 0} to call` },
             { id: 'credentials', label: 'Issued Credentials', count: stats?.activeCredentials, countType: 'neutral', countText: `${stats?.activeCredentials || 0} active` },
+            { id: 'passwords', label: '🔐 Password Manager' },
           ].map(t => (
             <button
               key={t.id}
@@ -798,6 +843,227 @@ export default function AdminDashboard() {
           )
         )}
 
+        {/* PASSWORDS TAB (Conductor & College Password Manager) */}
+        {tab === 'passwords' && (
+          loading ? (
+            <div className="loading-page" style={{ paddingTop: '2rem' }}><span className="spinner" /> Loading staff accounts…</div>
+          ) : (
+            <div>
+              <div style={{
+                background: 'linear-gradient(135deg, #064e3b, #047857)',
+                color: 'white',
+                padding: '1.25rem 1.5rem',
+                borderRadius: '12px',
+                marginBottom: '1.5rem',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '1rem'
+              }}>
+                <div>
+                  <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.8, fontWeight: 700 }}>
+                    KSRTC Security Administration
+                  </div>
+                  <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0.25rem 0' }}>
+                    🔐 Depot & Institution Password Manager
+                  </h2>
+                  <p style={{ fontSize: '0.85rem', opacity: 0.9, maxWidth: '650px' }}>
+                    Generate or reset temporary access passwords for bus conductors and educational institutions. Provide generated credentials during telephone inquiries or depot assignments.
+                  </p>
+                </div>
+                <div style={{ background: 'rgba(255,255,255,0.15)', padding: '0.5rem 1rem', borderRadius: '8px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 800 }}>{staffAccounts.length}</div>
+                  <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Total Staff Accounts</div>
+                </div>
+              </div>
+
+              {/* Filters and Search */}
+              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.25rem', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  {[
+                    { id: 'all', label: `All Staff (${staffAccounts.length})` },
+                    { id: 'institution', label: `Colleges & Schools (${staffAccounts.filter(s => s.role === 'institution').length})` },
+                    { id: 'conductor', label: `Bus Conductors (${staffAccounts.filter(s => s.role === 'conductor').length})` },
+                  ].map(f => (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={() => setStaffFilter(f.id)}
+                      className={`btn btn--sm ${staffFilter === f.id ? 'btn--primary' : 'btn--outline'}`}
+                      style={{ fontSize: '0.8rem', padding: '0.35rem 0.75rem' }}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div style={{ minWidth: '260px', flex: 1, maxWidth: '400px' }}>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="Search by staff name, email, college or phone..."
+                    value={staffSearch}
+                    onChange={e => setStaffSearch(e.target.value)}
+                    style={{ fontSize: '0.85rem', padding: '0.4rem 0.75rem' }}
+                  />
+                </div>
+              </div>
+
+              {/* Staff Accounts Table */}
+              {(() => {
+                const filtered = staffAccounts.filter(s => {
+                  if (staffFilter !== 'all' && s.role !== staffFilter) return false;
+                  if (!staffSearch.trim()) return true;
+                  const q = staffSearch.toLowerCase();
+                  return (
+                    (s.name && s.name.toLowerCase().includes(q)) ||
+                    (s.email && s.email.toLowerCase().includes(q)) ||
+                    (s.phone && s.phone.includes(q)) ||
+                    (s.institution_name && s.institution_name.toLowerCase().includes(q))
+                  );
+                });
+
+                if (filtered.length === 0) {
+                  return (
+                    <div className="card" style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                      No staff accounts found matching your search.
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="table-wrap">
+                    <table className="table">
+                      <thead>
+                        <tr>
+                          <th>Official Name</th>
+                          <th>Role</th>
+                          <th>Login Email</th>
+                          <th>Official Phone</th>
+                          <th>Affiliation / Depot</th>
+                          <th>Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filtered.map(s => (
+                          <tr key={s.id}>
+                            <td>
+                              <div style={{ fontWeight: 700, color: 'var(--text)' }}>{s.name}</div>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>User ID: #{s.id}</div>
+                            </td>
+                            <td>
+                              <span className={`badge ${s.role === 'institution' ? 'badge--active' : 'badge--approved'}`}>
+                                {s.role === 'institution' ? '🏫 College Admin' : '🚌 Conductor'}
+                              </span>
+                            </td>
+                            <td style={{ fontSize: '0.85rem', fontFamily: 'var(--font-mono)' }}>{s.email}</td>
+                            <td style={{ fontSize: '0.85rem', fontWeight: 600 }}>{s.phone || '—'}</td>
+                            <td style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                              {s.institution_name ? `${s.institution_name} (${s.institution_district})` : 'KSRTC Central Operations'}
+                            </td>
+                            <td>
+                              <button
+                                className="btn btn--sm btn--primary"
+                                style={{
+                                  fontSize: '0.75rem',
+                                  padding: '0.35rem 0.75rem',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '0.35rem',
+                                  background: '#047857'
+                                }}
+                                onClick={() => handleGeneratePassword(s)}
+                                disabled={actionLoading === s.id}
+                                title="Generate or reset password"
+                              >
+                                {actionLoading === s.id ? <span className="spinner" /> : <><span>⚡</span> Generate Password</>}
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              })()}
+            </div>
+          )
+        )}
+
+        {/* GENERATED PASSWORD MODAL */}
+        {genPassModal && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+            <div className="card" style={{ maxWidth: '460px', width: '100%', background: '#fff', borderRadius: '12px', padding: '1.5rem', boxShadow: '0 20px 60px rgba(0,0,0,0.25)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#064e3b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span>🔑</span> Password Generated Successfully
+                </h3>
+                <button onClick={() => setGenPassModal(null)} style={{ background: 'none', border: 'none', fontSize: '1.1rem', cursor: 'pointer', color: 'var(--text-muted)' }}>✕</button>
+              </div>
+
+              <div style={{ padding: '0.75rem', background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '8px', marginBottom: '1rem' }}>
+                <div style={{ fontSize: '0.85rem', color: '#065f46', fontWeight: 700 }}>
+                  ✓ Database Password Updated & Hashed
+                </div>
+                <div style={{ fontSize: '0.75rem', color: '#047857', marginTop: '2px' }}>
+                  The user can immediately log in with this new password.
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '0.85rem' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Account Name</div>
+                <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{genPassModal.user.name} ({genPassModal.role === 'institution' ? 'College Admin' : 'Conductor'})</div>
+              </div>
+
+              <div style={{ marginBottom: '0.85rem' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Login Email</div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, background: '#f8fafc', padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '0.875rem' }}>
+                  {genPassModal.email}
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '1.25rem' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>New Password</div>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  background: '#fef3c7',
+                  border: '1.5px solid #f59e0b',
+                  padding: '0.6rem 0.85rem',
+                  borderRadius: '8px',
+                  marginTop: '4px'
+                }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '1.25rem', fontWeight: 900, color: '#92400e', letterSpacing: '0.05em' }}>
+                    {genPassModal.password}
+                  </span>
+                  <button
+                    className="btn btn--sm"
+                    style={{ background: copiedPass ? '#059669' : '#064e3b', color: '#fff', fontSize: '0.75rem', padding: '0.35rem 0.65rem' }}
+                    onClick={() => {
+                      navigator.clipboard.writeText(
+                        `ANAVANDI Credentials:\nOfficial: ${genPassModal.user.name}\nRole: ${genPassModal.role}\nEmail: ${genPassModal.email}\nPassword: ${genPassModal.password}`
+                      );
+                      setCopiedPass(true);
+                      setTimeout(() => setCopiedPass(false), 2500);
+                    }}
+                  >
+                    {copiedPass ? '✓ Copied!' : '📋 Copy All'}
+                  </button>
+                </div>
+              </div>
+
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: 1.4, marginBottom: '1.25rem' }}>
+                💡 <strong>KSRTC Protocol:</strong> Provide this password to the official during phone verification or depot assignment.
+              </p>
+
+              <button className="btn btn--full btn--primary" onClick={() => setGenPassModal(null)}>
+                Done
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* VERIFICATION MODAL */}
         {verifyModal && (

@@ -1,5 +1,6 @@
 // Admin routes â€” KSRTC admin: final approval, credential issuance, revocation
 import { Router } from 'express';
+import bcrypt from 'bcryptjs';
 import { authMiddleware, requireRole } from './auth.js';
 import { queryOne, queryAll, execute, saveDb } from '../db.js';
 import { signCredential } from '../crypto/sign.js';
@@ -339,6 +340,60 @@ router.delete('/reset-database', authMiddleware, requireRole('admin'), async (re
   } catch (err) {
     console.error('Reset error:', err);
     res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/admin/staff-accounts — list conductor and college accounts for password management
+router.get('/staff-accounts', authMiddleware, requireRole('admin'), (req, res) => {
+  try {
+    const staff = queryAll(
+      `SELECT u.id, u.name, u.email, u.phone, u.role, u.created_at,
+              i.id as institution_id, i.name as institution_name, i.place as institution_place, 
+              i.district as institution_district, i.status as institution_status, i.head_name
+       FROM users u
+       LEFT JOIN institutions i ON u.id = i.user_id
+       WHERE u.role IN ('conductor', 'institution')
+       ORDER BY 
+         CASE u.role WHEN 'institution' THEN 1 ELSE 2 END,
+         u.name ASC`
+    );
+    res.json({ staff });
+  } catch (err) {
+    console.error('Fetch staff accounts error:', err);
+    res.status(500).json({ error: 'Failed to fetch staff accounts' });
+  }
+});
+
+// POST /api/admin/reset-staff-password/:id — generate or set password for conductor or college
+router.post('/reset-staff-password/:id', authMiddleware, requireRole('admin'), async (req, res) => {
+  try {
+    const { custom_password } = req.body;
+    const targetUser = queryOne('SELECT * FROM users WHERE id = ? AND role IN (\'conductor\', \'institution\')', [req.params.id]);
+    if (!targetUser) {
+      return res.status(404).json({ error: 'Staff account not found or cannot be modified' });
+    }
+
+    // Auto-generate if custom_password not provided or short
+    const rawPassword = custom_password && custom_password.trim().length >= 6
+      ? custom_password.trim()
+      : `KSRTC@${Math.floor(1000 + Math.random() * 9000)}`;
+
+    const hash = await bcrypt.hash(rawPassword, 10);
+    execute('UPDATE users SET password_hash = ? WHERE id = ?', [hash, targetUser.id]);
+    saveDb();
+
+    res.json({
+      success: true,
+      message: `Password successfully updated for ${targetUser.name}`,
+      userId: targetUser.id,
+      email: targetUser.email,
+      name: targetUser.name,
+      role: targetUser.role,
+      password: rawPassword
+    });
+  } catch (err) {
+    console.error('Reset staff password error:', err);
+    res.status(500).json({ error: 'Failed to update staff password' });
   }
 });
 

@@ -322,4 +322,59 @@ router.get('/institutions', async (req, res) => {
   }
 });
 
+// POST /api/auth/student/reset-password — student demographic password recovery
+router.post('/student/reset-password', async (req, res) => {
+  try {
+    const { email, phone, guardian_name, new_password } = req.body;
+
+    if (!email || !phone || !new_password) {
+      return res.status(400).json({ error: 'Email, registered phone number, and new password are required.' });
+    }
+
+    if (new_password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters long.' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPhone = phone.replace(/\D/g, '');
+
+    // 1. Locate student account
+    const user = queryOne('SELECT * FROM users WHERE LOWER(email) = ? AND role = ?', [cleanEmail, 'student']);
+    if (!user) {
+      return res.status(404).json({ error: 'No registered student account found with this email address.' });
+    }
+
+    // 2. Validate registered mobile number
+    const userPhone = (user.phone || '').replace(/\D/g, '');
+    if (userPhone && userPhone !== cleanPhone) {
+      return res.status(400).json({ error: 'The mobile number provided does not match our registered account records.' });
+    }
+
+    // 3. If guardian/father name provided, verify against application records
+    if (guardian_name && guardian_name.trim()) {
+      const app = queryOne('SELECT guardian_name FROM applications WHERE student_user_id = ? ORDER BY id DESC LIMIT 1', [user.id]);
+      if (app && app.guardian_name) {
+        const cleanInputGuardian = guardian_name.trim().toLowerCase();
+        const cleanDbGuardian = app.guardian_name.trim().toLowerCase();
+        if (!cleanDbGuardian.includes(cleanInputGuardian) && !cleanInputGuardian.includes(cleanDbGuardian)) {
+          return res.status(400).json({ error: "Father's / Guardian's name does not match the concession application records." });
+        }
+      }
+    }
+
+    // 4. Update password hash
+    const passwordHash = await bcrypt.hash(new_password, 10);
+    execute('UPDATE users SET password_hash = ? WHERE id = ?', [passwordHash, user.id]);
+    saveDb();
+
+    res.json({
+      success: true,
+      message: 'Password reset successfully. You may now sign in with your new password.'
+    });
+  } catch (err) {
+    console.error('Student password reset error:', err);
+    res.status(500).json({ error: 'Password reset failed. Please try again.' });
+  }
+});
+
 export default router;
