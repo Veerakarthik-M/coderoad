@@ -93,7 +93,7 @@ export default function Login({ portal: propPortal, onAuth }) {
               cursor: 'pointer'
             }}
           >
-            🎓 Student Login
+            🎓 Student
           </button>
           <button
             type="button"
@@ -111,7 +111,7 @@ export default function Login({ portal: propPortal, onAuth }) {
               cursor: 'pointer'
             }}
           >
-            🏫 School / College
+            🔒 Institution Admin
           </button>
           <button
             type="button"
@@ -129,7 +129,7 @@ export default function Login({ portal: propPortal, onAuth }) {
               cursor: 'pointer'
             }}
           >
-            🚌 KSRTC Admin
+            🔒 KSRTC / Conductor
           </button>
         </div>
 
@@ -140,17 +140,17 @@ export default function Login({ portal: propPortal, onAuth }) {
           <div>
             <div className="login-logo__name">ANAVANDI</div>
             <div className="login-logo__tagline" style={{ fontWeight: 600, color: isInstitution ? '#059669' : '#064e3b' }}>
-              {isInstitution ? 'Educational Institution Portal' : isKsrtc ? 'KSRTC Officer & Admin Portal' : 'Student Concession Pass'}
+              {isInstitution ? 'Institution Admin Portal' : isKsrtc ? 'KSRTC & Conductor Portal' : 'Student Concession Pass'}
             </div>
           </div>
         </div>
 
         <div>
           <h1 className="login-form__title">
-            {isInstitution ? 'School & College Portal Sign In' : isKsrtc ? 'KSRTC Official Portal Sign In' : 'Student Sign In'}
+            {isInstitution ? 'Institution Admin Sign In' : isKsrtc ? 'KSRTC & Conductor Sign In' : 'Student Sign In'}
           </h1>
           <p className="login-form__subtitle">
-            {isInstitution ? 'Enter your institutional officer credentials to manage student passes' : isKsrtc ? 'Authorized KSRTC officers & conductors sign in here' : 'Sign in to access your digital concession pass'}
+            {isInstitution ? 'Sign in as an institution admin to verify & approve student pass applications' : isKsrtc ? 'KSRTC admins & bus conductors sign in here to manage and verify passes' : 'Sign in to access your digital concession pass'}
           </p>
         </div>
 
@@ -196,7 +196,7 @@ export default function Login({ portal: propPortal, onAuth }) {
             id="login-submit"
             disabled={loading}
           >
-            {loading ? <span className="spinner" /> : isInstitution ? 'Sign In to College Portal' : isKsrtc ? 'Sign In to KSRTC Portal' : 'Sign In'}
+            {loading ? <span className="spinner" /> : isInstitution ? 'Sign In as Institution Admin' : isKsrtc ? 'Sign In to KSRTC Portal' : 'Sign In'}
           </button>
         </form>
 
@@ -212,7 +212,7 @@ export default function Login({ portal: propPortal, onAuth }) {
               disabled={loading}
               type="button"
             >
-              <span className="quick-login-btn__role" style={{ color: '#059669', fontWeight: 800 }}>🏫 College / School Admin (Demo)</span>
+              <span className="quick-login-btn__role" style={{ color: '#059669', fontWeight: 800 }}>🏫 Institution Admin (Demo)</span>
               admin@amrita.edu
             </button>
           ) : isKsrtc ? (
@@ -257,7 +257,7 @@ export default function Login({ portal: propPortal, onAuth }) {
 
         <p style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
           {isInstitution ? (
-            <>New school or college? <Link to="/register/institution" style={{ color: '#059669', fontWeight: '600' }}>Register Institution</Link></>
+            <>New institution? <Link to="/register/institution" style={{ color: '#059669', fontWeight: '600' }}>Register Your Institution</Link></>
           ) : (
             <>New student? <Link to="/register/student" style={{ color: 'var(--blue-600)', fontWeight: '600' }}>Apply for a Pass</Link></>
           )}

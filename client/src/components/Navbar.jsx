@@ -45,10 +45,10 @@ export default function Navbar({ user }) {
             ) : (
               <>
                 <Link to="/login/institution" className="official-nav__login-btn official-nav__login-btn--secondary" id="nav-school-login">
-                  🏫 School Login
+                  🔒 Institution Admin
                 </Link>
                 <Link to="/login/ksrtc" className="official-nav__login-btn official-nav__login-btn--primary" id="nav-ksrtc-login">
-                  🚌 KSRTC Official Login
+                  🔒 KSRTC / Conductor
                 </Link>
               </>
             )}
