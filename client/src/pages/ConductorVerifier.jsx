@@ -249,10 +249,19 @@ function QRScannerView({ onScan, onCancel, onError }) {
 }
 
 // --- Main Conductor App ---
-export default function ConductorVerifier() {
+export default function ConductorVerifier({ onLogout }) {
   const navigate = useNavigate();
   const user = api.getUser();
   const online = useNetworkStatus();
+
+  const handleSignOut = () => {
+    if (onLogout) {
+      onLogout();
+    } else {
+      api.logout();
+    }
+    navigate('/login/ksrtc');
+  };
 
   const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState(null);
@@ -419,7 +428,7 @@ export default function ConductorVerifier() {
           <div className="conductor-header__brand">🚌 ANAVANDI Conductor</div>
           <div className="conductor-header__meta">{user.name} · KSRTC</div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           {/* Sync indicator */}
           {lastSync && (
             <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textAlign: 'right' }}>
@@ -430,6 +439,28 @@ export default function ConductorVerifier() {
             <div className={`network-dot network-dot--${online ? 'online' : 'offline'}`} />
             {online ? 'Online' : 'Offline'}
           </div>
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className="btn btn--outline"
+            id="conductor-logout-btn"
+            style={{
+              padding: '0.35rem 0.65rem',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              background: '#fee2e2',
+              color: '#b91c1c',
+              border: '1px solid #fca5a5',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.25rem'
+            }}
+            title="Sign Out / Exit"
+          >
+            🚪 Sign Out
+          </button>
         </div>
       </div>
 

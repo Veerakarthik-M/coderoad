@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
-export default function Navbar({ user }) {
+export default function Navbar({ user, onLogout }) {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -39,9 +39,29 @@ export default function Navbar({ user }) {
           <div className="official-nav__spacer" />
           <div className="official-nav__login-btns">
             {user ? (
-              <Link to={`/${user.role}`} className="official-nav__login-btn official-nav__login-btn--primary">
-                🏠 Dashboard
-              </Link>
+              <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                <Link to={`/${user.role}`} className="official-nav__login-btn official-nav__login-btn--primary" id="nav-dashboard-btn">
+                  🏠 Dashboard
+                </Link>
+                {onLogout && (
+                  <button
+                    type="button"
+                    onClick={onLogout}
+                    className="official-nav__login-btn"
+                    style={{
+                      background: '#fee2e2',
+                      color: '#b91c1c',
+                      border: '1px solid #fca5a5',
+                      cursor: 'pointer',
+                      fontWeight: 700
+                    }}
+                    id="nav-signout-btn"
+                    title="Sign Out"
+                  >
+                    🚪 Sign Out
+                  </button>
+                )}
+              </div>
             ) : (
               <>
                 <Link to="/login/institution" className="official-nav__login-btn official-nav__login-btn--secondary" id="nav-school-login" title="College & School Login">

@@ -30,7 +30,33 @@ function AppShell({ user, onLogout }) {
   return (
     <div className="app-shell">
       <div className="app-shell__mobile-header">
-        <button className="mobile-menu-btn" onClick={() => setSidebarOpen(true)}>☰ Menu</button>
+        <button className="mobile-menu-btn" onClick={() => setSidebarOpen(true)}>
+          ☰ Menu
+        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#e2e8f0', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {user.name || user.email}
+          </span>
+          <button
+            onClick={onLogout}
+            style={{
+              background: '#dc2626',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '6px',
+              padding: '0.35rem 0.65rem',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.25rem'
+            }}
+            id="mobile-header-logout"
+          >
+            🚪 Logout
+          </button>
+        </div>
       </div>
       <div className={`app-shell__sidebar ${sidebarOpen ? 'app-shell__sidebar--open' : ''}`}>
         {sidebarOpen && <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)}></div>}
@@ -63,9 +89,9 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <Navbar user={user} />
+      <Navbar user={user} onLogout={handleLogout} />
       <Routes>
-        <Route path="/" element={<Landing user={user} onAuth={handleAuth} />} />
+        <Route path="/" element={<Landing user={user} onAuth={handleAuth} onLogout={handleLogout} />} />
         <Route path="/login" element={<Login onAuth={handleAuth} />} />
         <Route path="/login/institution" element={<Login portal="institution" onAuth={handleAuth} />} />
         <Route path="/login/ksrtc" element={<Login portal="ksrtc" onAuth={handleAuth} />} />
@@ -93,10 +119,11 @@ export default function App() {
         </Route>
         
         {/* Conductor app runs standalone */}
-        <Route path="/conductor" element={<ConductorVerifier />} />
+        <Route path="/conductor" element={<ConductorVerifier onLogout={handleLogout} />} />
         
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </BrowserRouter>
   );
 }
+

@@ -73,7 +73,7 @@ function HeroLoginPanel({ onAuth }) {
   );
 }
 
-export default function Landing({ user, onAuth }) {
+export default function Landing({ user, onAuth, onLogout }) {
   return (
     <main>
       <section className="landing-hero" id="home">
@@ -106,8 +106,35 @@ export default function Landing({ user, onAuth }) {
                 <div className="hero-login-panel">
                   <div className="hero-login-panel__header"><h2 className="hero-login-panel__title">Welcome back!</h2></div>
                   <div className="hero-login-panel__body" style={{ textAlign: 'center' }}>
-                    <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>You are signed in as <strong>{user.email}</strong></p>
-                    <Link to={`/${user.role}`} className="hero-login-panel__submit" style={{ display: 'block', textDecoration: 'none', textAlign: 'center' }}>Go to Dashboard</Link>
+                    <p style={{ color: 'var(--text-secondary)', marginBottom: '1.25rem', fontSize: '0.9rem' }}>
+                      You are signed in as <strong>{user.name || user.email}</strong>
+                    </p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      <Link to={`/${user.role}`} className="hero-login-panel__submit" id="hero-dashboard-btn" style={{ display: 'block', textDecoration: 'none', textAlign: 'center' }}>
+                        Go to Dashboard
+                      </Link>
+                      {onLogout && (
+                        <button
+                          type="button"
+                          onClick={onLogout}
+                          id="hero-logout-btn"
+                          className="btn btn--outline"
+                          style={{
+                            width: '100%',
+                            borderColor: '#ef4444',
+                            color: '#b91c1c',
+                            background: '#fef2f2',
+                            fontWeight: 700,
+                            padding: '0.65rem 1rem',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontSize: '0.875rem'
+                          }}
+                        >
+                          🚪 Sign Out / Switch Account
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               ) : (
