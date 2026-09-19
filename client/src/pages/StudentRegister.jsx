@@ -172,6 +172,8 @@ export default function StudentRegister({ onAuth }) {
           errors.dateOfBirth = 'Date of birth cannot be in the future';
         } else if (age < 5 || age > 100) {
           errors.dateOfBirth = 'Age must be between 5 and 100 years';
+        } else if (form.studentType === 'college' && age > 27) {
+          errors.dateOfBirth = 'As per KSRTC rules, college student concession is only available up to 27 years of age.';
         }
       }
 
@@ -712,40 +714,69 @@ export default function StudentRegister({ onAuth }) {
           {step === 4 && (
             <div>
               <div className="card__section-label">
-                {isSchool ? 'School ID Card Upload' : 'College ID Card Upload'}
+                Required Official Documents Upload (KSRTC Guidelines)
               </div>
               <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1.25rem' }}>
-                {isSchool
-                  ? 'Upload your school ID card to verify your student status. This is required for school students.'
-                  : 'Upload your college/university ID card. This helps verify your enrollment before the pass is issued.'}
+                As per Kerala KSRTC student concession rules, please upload clear copies of the required documents below (Max 5 MB each).
               </p>
 
-              <FileUpload
-                id="upload-id-card"
-                label={isSchool ? 'School ID Card' : 'College / University ID Card'}
-                accept="image/jpeg,image/png,image/webp,application/pdf"
-                hint="JPEG, PNG, WebP or PDF · Max 5 MB"
-                onFile={setIdCardFile}
-                file={idCardFile}
-                required
-              />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                <FileUpload
+                  id="upload-id-card"
+                  label={isSchool ? '1. School ID Card' : '1. College / University ID Card'}
+                  accept="image/jpeg,image/png,image/webp,application/pdf"
+                  hint="Required for enrollment verification"
+                  onFile={setIdCardFile}
+                  file={idCardFile}
+                  required
+                />
+
+                <FileUpload
+                  id="upload-photo"
+                  label="2. Student Photo (Stamp / Passport Size)"
+                  accept="image/jpeg,image/png,image/webp"
+                  hint="Will be printed on concession pass"
+                  onFile={() => {}}
+                  file={idCardFile}
+                  required
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <FileUpload
+                  id="upload-form1"
+                  label="3. Form No. 1 / Course Certificate"
+                  accept="image/jpeg,image/png,image/webp,application/pdf"
+                  hint="Form No. 26 signed by Head of Institution"
+                  onFile={() => {}}
+                  file={null}
+                />
+
+                <FileUpload
+                  id="upload-ration"
+                  label="4. Ration Card / Aadhaar Copy"
+                  accept="image/jpeg,image/png,image/webp,application/pdf"
+                  hint="For BPL free / APL 30% rate verification"
+                  onFile={() => {}}
+                  file={null}
+                />
+              </div>
               <FieldError msg={fieldErrors.idCard} />
 
               {!idCardFile && (
                 <div className="alert alert--warning" style={{ marginTop: '0.75rem' }}>
-                  ⚠️ Your ID card is required. Institution administrators will use this to verify your enrollment.
+                  ⚠️ Student ID card is required. Institution administrators will use this to verify your enrollment.
                 </div>
               )}
 
               {idCardFile && (
                 <div className="alert alert--success" style={{ marginTop: '0.75rem' }}>
-                  ✅ ID card ready for upload. It will be securely stored on the server.
+                  ✅ Documents attached and ready for submission. Stored securely on KSRTC servers.
                 </div>
               )}
 
               <div className="alert alert--info" style={{ marginTop: '0.75rem' }}>
-                Your document is stored securely on the server and only accessible to authorised institution 
-                administrators for verification purposes.
+                📌 <strong>KSRTC Rule:</strong> Bring your original Student ID Card, 2 stamp-size photos, and previous year concession pass (if renewing) when picking up physical card from depot.
               </div>
             </div>
           )}

@@ -471,9 +471,240 @@ function VerificationLogsTab() {
       )}
     </div>
   );
+// --- PROGRAMME DETAILS TAB (As per Government Portal Spec) ---
+function ProgrammesTab() {
+  const [programmes, setProgrammes] = useState([
+    { id: 1, programme: 'B.Tech Computer Science', intake: '120', courseType: 'Regular', fromYear: '2024', toYear: '2028', fileName: '' },
+    { id: 2, programme: 'B.Tech Mechanical Engineering', intake: '60', courseType: 'Regular', fromYear: '2024', toYear: '2028', fileName: '' },
+  ]);
+  const [successMsg, setSuccessMsg] = useState('');
+
+  const addRow = () => {
+    setProgrammes(prev => [
+      ...prev,
+      { id: Date.now(), programme: '', intake: '', courseType: '', fromYear: '2024', toYear: '2028', fileName: '' }
+    ]);
+  };
+
+  const updateRow = (id, field, value) => {
+    setProgrammes(prev => prev.map(p => p.id === id ? { ...p, [field]: value } : p));
+  };
+
+  const removeRow = (id) => {
+    if (programmes.length === 1) return;
+    setProgrammes(prev => prev.filter(p => p.id !== id));
+  };
+
+  const handleFileUpload = (id, e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        alert('File size exceeds maximum limit of 2 MB');
+        return;
+      }
+      updateRow(id, 'fileName', file.name);
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setSuccessMsg('Programme details and affiliation documents updated successfully!');
+    setTimeout(() => setSuccessMsg(''), 4000);
+  };
+
+  return (
+    <div className="card" style={{ padding: '1.5rem', background: '#ffffff', borderRadius: '8px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+        <h3 style={{ color: '#9a3412', fontSize: '1.15rem', fontWeight: 800, margin: 0 }}>Programme Details</h3>
+        <button
+          type="button"
+          onClick={addRow}
+          style={{
+            background: '#0d9488',
+            color: '#ffffff',
+            border: 'none',
+            borderRadius: '4px',
+            width: '28px',
+            height: '28px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontWeight: '900',
+            fontSize: '1rem',
+            cursor: 'pointer'
+          }}
+          title="Add Programme Row"
+        >
+          +
+        </button>
+      </div>
+
+      {successMsg && (
+        <div className="alert alert--success" style={{ marginBottom: '1rem' }}>
+          ✅ {successMsg}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
+          {programmes.map((p, idx) => (
+            <div
+              key={p.id}
+              style={{
+                background: '#f5f3ff',
+                border: '1px solid #e0e7ff',
+                borderRadius: '6px',
+                padding: '1rem',
+                display: 'grid',
+                gridTemplateColumns: '1.5fr 1fr 1.2fr 1fr auto 1fr 1.5fr auto',
+                gap: '0.5rem',
+                alignItems: 'center'
+              }}
+            >
+              <div>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="Programme"
+                  value={p.programme}
+                  onChange={e => updateRow(p.id, 'programme', e.target.value)}
+                  style={{ background: '#ffffff', fontSize: '0.85rem' }}
+                  required
+                />
+              </div>
+
+              <div>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="Intake"
+                  value={p.intake}
+                  onChange={e => updateRow(p.id, 'intake', e.target.value)}
+                  style={{ background: '#ffffff', fontSize: '0.85rem' }}
+                />
+              </div>
+
+              <div>
+                <select
+                  className="form-select"
+                  value={p.courseType}
+                  onChange={e => updateRow(p.id, 'courseType', e.target.value)}
+                  style={{ background: '#ffffff', fontSize: '0.85rem' }}
+                >
+                  <option value="">Type of course</option>
+                  <option value="Regular">Regular / Full Time</option>
+                  <option value="Evening">Evening</option>
+                  <option value="Self Finance">Self Finance</option>
+                  <option value="Distance">Distance</option>
+                </select>
+              </div>
+
+              <div>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="Academic From Year"
+                  value={p.fromYear}
+                  onChange={e => updateRow(p.id, 'fromYear', e.target.value)}
+                  style={{ background: '#ffffff', fontSize: '0.85rem' }}
+                />
+              </div>
+
+              <div style={{
+                background: '#ea580c',
+                color: '#ffffff',
+                width: '20px',
+                height: '20px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: '900',
+                fontSize: '0.75rem'
+              }}>
+                -
+              </div>
+
+              <div>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="Academic To Year"
+                  value={p.toYear}
+                  onChange={e => updateRow(p.id, 'toYear', e.target.value)}
+                  style={{ background: '#ffffff', fontSize: '0.85rem' }}
+                />
+              </div>
+
+              <div style={{ textAlign: 'center' }}>
+                <label
+                  style={{
+                    background: '#a8a29e',
+                    color: '#ffffff',
+                    padding: '0.6rem 0.75rem',
+                    borderRadius: '4px',
+                    fontSize: '0.8rem',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.375rem',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  📥 {p.fileName ? p.fileName.substring(0, 12) + '…' : 'Upload Document'}
+                  <input
+                    type="file"
+                    accept=".jpg,.jpeg,.png,.pdf"
+                    onChange={e => handleFileUpload(p.id, e)}
+                    style={{ display: 'none' }}
+                  />
+                </label>
+                <div style={{ fontSize: '0.65rem', color: '#6b7280', marginTop: '4px', lineHeight: 1.2 }}>
+                  (maximum: 2 MB. In jpeg,png,jpg and pdf format)
+                </div>
+              </div>
+
+              {programmes.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => removeRow(p.id)}
+                  style={{ background: '#ef4444', color: '#ffffff', border: 'none', borderRadius: '4px', padding: '0.4rem 0.5rem', cursor: 'pointer', fontSize: '0.75rem' }}
+                  title="Remove row"
+                >
+                  🗑️
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <button
+          type="submit"
+          style={{
+            width: '100%',
+            background: '#ea580c',
+            color: '#ffffff',
+            border: 'none',
+            padding: '0.75rem',
+            borderRadius: '4px',
+            fontSize: '1rem',
+            fontWeight: 800,
+            letterSpacing: '0.05em',
+            textTransform: 'uppercase',
+            cursor: 'pointer',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+          }}
+        >
+          SUBMIT
+        </button>
+      </form>
+    </div>
+  );
 }
 
-// --- MAIN COMPONENT ---
+// --- MAIN COMPONENT --- ──────────────────────────────────────
 export default function InstitutionDashboard() {
   const [tab, setTab] = useState('applications');
   const [stats, setStats] = useState(null);
@@ -513,6 +744,7 @@ export default function InstitutionDashboard() {
         <div className="tab-nav" role="tablist">
           {[
             { id: 'applications', label: 'Applications' + (stats?.pending ? ` (${stats.pending})` : '') },
+            { id: 'programmes', label: 'Programme Details' },
             { id: 'students', label: 'Students' },
             { id: 'logs', label: 'Verification Logs' },
           ].map(t => (
@@ -530,6 +762,7 @@ export default function InstitutionDashboard() {
         </div>
 
         {tab === 'applications' && <ApplicationsTab />}
+        {tab === 'programmes' && <ProgrammesTab />}
         {tab === 'students' && <StudentsTab />}
         {tab === 'logs' && <VerificationLogsTab />}
       </div>
