@@ -445,20 +445,7 @@ textarea.form-input{resize:vertical;min-height:80px}
   .quick-logins{grid-template-columns:1fr}
 }
 
-.official-nav{background:var(--bg);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50}
-.official-nav__inner{max-width:1200px;margin:0 auto;padding:0 1.5rem;display:flex;align-items:center;height:100%}
-.official-nav__topbar{height:72px;border-bottom:1px solid var(--border)}
-.official-nav__brand{display:flex;align-items:center;gap:1rem;text-decoration:none;color:var(--text)}
-.official-nav__emblem{width:48px;height:48px;background:var(--blue-600);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-sm)}
-.official-nav__brand-text{display:flex;flex-direction:column}
-.official-nav__brand-name{font-size:1.5rem;font-weight:900;letter-spacing:0.05em;line-height:1.1}
-.official-nav__brand-sub{font-size:0.75rem;color:var(--text-muted);font-weight:600}
-.official-nav__spacer{flex:1}
-.official-nav__login-btns{display:flex;gap:0.75rem}
-.official-nav__login-btn{padding:0.625rem 1rem;border-radius:var(--radius);font-size:0.8125rem;font-weight:700;text-decoration:none;display:flex;align-items:center;gap:0.5rem;transition:all 0.15s;border:1px solid transparent}
-.official-nav__login-btn--primary{background:var(--teal-600);color:white}
-.official-nav__login-btn--primary:hover{background:var(--teal-700)}
-.official-nav__login-btn--secondary{background:white;color:var(--text);border-color:var(--border)}
+/* duplicate nav block removed */
 .scanner-placeholder{color:rgba(255,255,255,.45);text-align:center;padding:2rem}
 .scanner-placeholder__icon{font-size:3rem;margin-bottom:.75rem}
 .scanner-placeholder p{font-size:.875rem}
@@ -506,6 +493,13 @@ textarea.form-input{resize:vertical;min-height:80px}
 .official-nav__links{display:flex;align-items:center;gap:.25rem}
 .official-nav__link{color:rgba(255,255,255,.8);font-size:.8125rem;font-weight:500;padding:.35rem .875rem;border-radius:3px;text-decoration:none;transition:color .15s,background .15s}
 .official-nav__link:hover{color:white;background:rgba(255,255,255,.1)}
+@media (max-width: 768px) {
+  .official-nav__brand-sub { display: none; }
+  .official-nav__login-btns { display: none; }
+  .official-nav__links { gap: 0.5rem; overflow-x: auto; }
+  .official-nav__link { font-size: 0.75rem; padding: .35rem .5rem; }
+  .official-nav__brand-name { font-size: 1rem; }
+}
 
 /* ── Landing Hero ─────────────────────────────────── */
 .landing-hero{position:relative;min-height:560px;display:flex;align-items:center;background:var(--blue-900);overflow:hidden}
@@ -641,32 +635,7 @@ textarea.form-input{resize:vertical;min-height:80px}
   .quick-logins{grid-template-columns:1fr}
 }
 
-.official-nav{background:var(--bg);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50}
-.official-nav__inner{max-width:1200px;margin:0 auto;padding:0 1.5rem;display:flex;align-items:center;height:100%}
-.official-nav__topbar{height:72px;border-bottom:1px solid var(--border)}
-.official-nav__brand{display:flex;align-items:center;gap:1rem;text-decoration:none;color:var(--text)}
-.official-nav__emblem{width:48px;height:48px;background:var(--blue-600);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-sm)}
-.official-nav__brand-text{display:flex;flex-direction:column}
-.official-nav__brand-name{font-size:1.5rem;font-weight:900;letter-spacing:0.05em;line-height:1.1}
-.official-nav__brand-sub{font-size:0.75rem;color:var(--text-muted);font-weight:600}
-.official-nav__spacer{flex:1}
-.official-nav__login-btns{display:flex;gap:0.75rem}
-.official-nav__login-btn{padding:0.625rem 1rem;border-radius:var(--radius);font-size:0.8125rem;font-weight:700;text-decoration:none;display:flex;align-items:center;gap:0.5rem;transition:all 0.15s;border:1px solid transparent}
-.official-nav__login-btn--primary{background:var(--teal-600);color:white}
-.official-nav__login-btn--primary:hover{background:var(--teal-700)}
-.official-nav__login-btn--secondary{background:white;color:var(--text);border-color:var(--border)}
-.official-nav__login-btn--secondary:hover{background:var(--gray-50);border-color:var(--gray-300)}
-.official-nav__links-bar{height:44px;background:var(--blue-900);color:white}
-.official-nav__links{display:flex;gap:2rem;align-items:center;height:100%}
-.official-nav__link{color:rgba(255,255,255,0.85);text-decoration:none;font-size:0.875rem;font-weight:600;transition:color 0.15s}
-.official-nav__link:hover{color:white}
-@media (max-width: 768px) {
-  .official-nav__brand-sub { display: none; }
-  .official-nav__login-btns { display: none; }
-  .official-nav__links { gap: 0.75rem; overflow-x: auto; font-size: 0.8rem; }
-  .official-nav__topbar { height: 60px; }
-  .official-nav__brand-name { font-size: 1.1rem; }
-}
+/* duplicate nav block removed */
 
 /* ── Comprehensive Mobile Responsive ── */
 @media (max-width: 900px) {
