@@ -162,27 +162,32 @@ export default function AdminDashboard() {
   const handleGeneratePassword = async (user, customPass = null) => {
     setActionLoading(user.id);
     try {
-      let rawPass = customPass || `KSRTC@${Math.floor(1000 + Math.random() * 9000)}`;
-      try {
-        const d = await api.post(`/admin/reset-staff-password/${user.id}`, {
-          custom_password: customPass
-        });
-        if (d && d.password) rawPass = d.password;
-      } catch (apiErr) {
-        console.warn('Backend reset endpoint offline, using generated key:', apiErr.message);
+      const d = await api.post(`/admin/reset-staff-password/${user.id}`, {
+        custom_password: customPass
+      });
+
+      if (!d || !d.password) {
+        throw new Error('Server did not return updated credentials.');
       }
 
       setGenPassModal({
         user,
-        password: rawPass,
-        role: user.role,
-        email: user.email
+        password: d.password,
+        role: d.role,
+        email: d.email
       });
       setCopiedPass(false);
-      setAlert({ type: 'success', msg: `New password generated successfully for ${user.name}!` });
+      setAlert({ type: 'success', msg: `New password generated and saved in database for ${user.name}!` });
       loadStaffAccounts();
     } catch (err) {
-      setAlert({ type: 'error', msg: err.message });
+      if (err.message && (err.message.includes('404') || err.message.includes('not found'))) {
+        setAlert({
+          type: 'error',
+          msg: 'Cannot update password in database: Render backend has not deployed the latest commit yet. Please open Render Dashboard (coderoad-zp7o) and click "Manual Deploy → Deploy latest commit". Until then, the existing password (demo123) is active.'
+        });
+      } else {
+        setAlert({ type: 'error', msg: 'Password reset failed: ' + err.message });
+      }
     } finally {
       setActionLoading(null);
     }
