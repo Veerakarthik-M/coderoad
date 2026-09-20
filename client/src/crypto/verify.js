@@ -5,6 +5,16 @@ const PUBLIC_KEY_STORAGE_KEY = 'anavandi_public_key_jwk';
 const REVOCATION_STORAGE_KEY = 'anavandi_revocations';
 const LAST_SYNC_KEY = 'anavandi_last_sync';
 
+// Default KSRTC Authority Public Key JWK (embedded for 100% zero-config offline verification)
+export const DEFAULT_PUBLIC_JWK = {
+  kty: 'EC',
+  x: 'xu2noMBmQtBGvX6NyuxEln6hQvSHJHBn3ZgopQ8VvnU',
+  y: '0DcftgId4lBjhZ70n3dIW62PA41ZiX7iHHdq-LWYBLE',
+  crv: 'P-256',
+  alg: 'ES256',
+  use: 'sig'
+};
+
 // Base64url decode helper
 function base64urlToBuffer(base64url) {
   const base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
@@ -16,6 +26,13 @@ function base64urlToBuffer(base64url) {
     bytes[i] = binary.charCodeAt(i);
   }
   return bytes.buffer;
+}
+
+// Safely decode UTF-8 JSON payload from base64url
+function decodeBase64UrlPayload(base64url) {
+  const buffer = base64urlToBuffer(base64url);
+  const decoder = new TextDecoder('utf-8');
+  return JSON.parse(decoder.decode(buffer));
 }
 
 // Convert DER-encoded ECDSA signature to raw r||s format (needed by Web Crypto)
@@ -61,7 +78,14 @@ export function cachePublicKey(jwk) {
  */
 export function getCachedPublicKey() {
   const data = localStorage.getItem(PUBLIC_KEY_STORAGE_KEY);
-  return data ? JSON.parse(data) : null;
+  if (data) {
+    try {
+      return JSON.parse(data);
+    } catch (_) {
+      // Ignore parse error and fallback to default
+    }
+  }
+  return DEFAULT_PUBLIC_JWK;
 }
 
 /**
@@ -97,16 +121,16 @@ export async function verifyCredentialOffline(jwsToken) {
   
   try {
     // 1. Split JWS into parts
-    const parts = jwsToken.split('.');
+    const parts = (jwsToken || '').trim().split('.');
     if (parts.length !== 3) {
       return result('TAMPERED', null, startTime, 'Invalid credential format');
     }
     const [headerB64, payloadB64, signatureB64] = parts;
 
-    // 2. Get cached public key
+    // 2. Get cached public key (falls back to default authority key)
     const publicKeyJWK = getCachedPublicKey();
     if (!publicKeyJWK) {
-      return result('ERROR', null, startTime, 'No public key cached. Connect to internet first.');
+      return result('ERROR', null, startTime, 'No public key available for verification');
     }
 
     // 3. Import public key using Web Crypto API
@@ -144,12 +168,11 @@ export async function verifyCredentialOffline(jwsToken) {
     );
 
     if (!valid) {
-      return result('TAMPERED', null, startTime, 'Credential signature verification failed');
+      return result('TAMPERED', null, startTime, 'Credential signature verification failed (tampered)');
     }
 
-    // 6. Decode payload
-    const payloadJson = atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/'));
-    const payload = JSON.parse(payloadJson);
+    // 6. Decode payload with UTF-8 support
+    const payload = decodeBase64UrlPayload(payloadB64);
 
     // 7. Check expiry
     if (payload.to) {
@@ -181,6 +204,6 @@ function result(status, payload, startTime, message) {
     message,
     verificationTimeMs: Math.round((performance.now() - startTime) * 100) / 100,
     verifiedAt: new Date().toISOString(),
-    mode: navigator.onLine ? 'ONLINE' : 'OFFLINE'
+    mode: (typeof navigator !== 'undefined' && navigator.onLine) ? 'ONLINE' : 'OFFLINE'
   };
 }

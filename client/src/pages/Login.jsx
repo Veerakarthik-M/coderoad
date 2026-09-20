@@ -71,11 +71,18 @@ export default function Login({ portal: propPortal, onAuth }) {
     setError('');
     setLoading(true);
     try {
-      const data = await api.post('/auth/login', { email, password });
+      const data = await api.post('/auth/login', { email: email.trim(), password });
       onAuth(data.user, data.token);
       redirect(data.user.role);
     } catch (err) {
-      setError(err.message);
+      let msg = err.message || 'Invalid credentials';
+      const cleanEmail = email.trim().toLowerCase();
+      if (activePortal === 'student' && (cleanEmail.includes('admin@') || cleanEmail.includes('.edu') || cleanEmail.includes('.ac.in'))) {
+        msg += ' (Tip: This looks like an Institution account. Please switch to the "🔒 Institution Admin" tab above.)';
+      } else if (activePortal === 'student' && (cleanEmail.includes('conductor') || cleanEmail.includes('ksrtc'))) {
+        msg += ' (Tip: This looks like a KSRTC account. Please switch to the "🚌 KSRTC / Conductor" tab above.)';
+      }
+      setError(msg);
     } finally {
       setLoading(false);
     }

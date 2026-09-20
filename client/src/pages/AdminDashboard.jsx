@@ -1054,6 +1054,22 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
+              <div style={{
+                background: '#f0fdf4',
+                border: '1px solid #bbf7d0',
+                padding: '0.5rem 0.75rem',
+                borderRadius: '6px',
+                marginBottom: '0.85rem',
+                fontSize: '0.8rem',
+                color: '#166534'
+              }}>
+                📌 <strong>Sign In Portal:</strong> {genPassModal.role === 'institution' ? (
+                  <>Sign in via the <strong>🔒 Institution Admin</strong> tab (or <code>/login/institution</code>)</>
+                ) : (
+                  <>Sign in via the <strong>🚌 KSRTC / Conductor</strong> tab (or <code>/login/ksrtc</code>)</>
+                )}
+              </div>
+
               <div style={{ marginBottom: '1.25rem' }}>
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>New Password</div>
                 <div style={{
@@ -1073,8 +1089,11 @@ export default function AdminDashboard() {
                     className="btn btn--sm"
                     style={{ background: copiedPass ? '#059669' : '#064e3b', color: '#fff', fontSize: '0.75rem', padding: '0.35rem 0.65rem' }}
                     onClick={() => {
+                      const portalNote = genPassModal.role === 'institution' 
+                        ? 'Sign in at /login/institution (Institution Admin tab)' 
+                        : 'Sign in at /login/ksrtc (KSRTC / Conductor tab)';
                       navigator.clipboard.writeText(
-                        `ANAVANDI Credentials:\nOfficial: ${genPassModal.user.name}\nRole: ${genPassModal.role}\nEmail: ${genPassModal.email}\nPassword: ${genPassModal.password}`
+                        `ANAVANDI Credentials:\nOfficial: ${genPassModal.user.name}\nRole: ${genPassModal.role}\nPortal: ${portalNote}\nEmail: ${genPassModal.email}\nPassword: ${genPassModal.password}`
                       );
                       setCopiedPass(true);
                       setTimeout(() => setCopiedPass(false), 2500);
@@ -1086,7 +1105,7 @@ export default function AdminDashboard() {
               </div>
 
               <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: 1.4, marginBottom: '1.25rem' }}>
-                💡 <strong>KSRTC Protocol:</strong> Provide this password to the official during phone verification or depot assignment.
+                💡 <strong>KSRTC Protocol:</strong> Provide these credentials to the official. Remind them to select the correct portal tab when signing in.
               </p>
 
               <button className="btn btn--full btn--primary" onClick={() => setGenPassModal(null)}>

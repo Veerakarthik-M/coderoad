@@ -22,6 +22,7 @@ export default function StudentPass() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showRawQR, setShowRawQR] = useState(false);
+  const [copiedToken, setCopiedToken] = useState(false);
 
   useEffect(() => { loadPass(); }, []);
 
@@ -195,12 +196,32 @@ export default function StudentPass() {
           )}
         </div>
 
-        <div style={{ display: 'flex', gap: '0.625rem', marginTop: '1rem', flexWrap: 'wrap' }}>
-          <Link to="/student" className="btn btn--outline" id="back-to-dashboard">
-            ← Dashboard
-          </Link>
+          <div style={{ display: 'flex', gap: '0.625rem', marginTop: '1rem', flexWrap: 'wrap' }}>
+            <button
+              className="btn btn--secondary"
+              style={{ fontSize: '0.8125rem' }}
+              onClick={() => {
+                navigator.clipboard.writeText(pass.qrData);
+                setCopiedToken(true);
+                setTimeout(() => setCopiedToken(false), 2000);
+              }}
+              id="copy-jws-btn"
+            >
+              {copiedToken ? '✓ Token Copied!' : '📋 Copy Token (for Verifier Test)'}
+            </button>
+            <button
+              className="btn btn--ghost"
+              style={{ fontSize: '0.8125rem' }}
+              onClick={() => window.print()}
+              id="print-pass-btn"
+            >
+              🖨️ Print / Save Pass
+            </button>
+            <Link to="/student" className="btn btn--outline" id="back-to-dashboard">
+              ← Dashboard
+            </Link>
+          </div>
         </div>
       </div>
-    </div>
   );
 }
