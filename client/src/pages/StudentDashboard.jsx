@@ -177,7 +177,7 @@ export default function StudentDashboard() {
                   #{app.id}
                 </div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', fontSize: '0.875rem' }}>
+              <div className="app-detail-grid" style={{ fontSize: '0.875rem' }}>
                 {[
                   ['Roll No', app.roll_no],
                   ['Course', app.course],
