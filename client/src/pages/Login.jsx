@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../api';
 
@@ -9,6 +9,15 @@ export default function Login({ portal: propPortal, onAuth }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // If user is already logged in, redirect to their dashboard immediately
+  useEffect(() => {
+    const existing = api.getUser();
+    if (existing?.role) {
+      const routes = { student: '/student', institution: '/institution', admin: '/admin', conductor: '/conductor' };
+      navigate(routes[existing.role] || '/', { replace: true });
+    }
+  }, []);
 
   // Student Forgot Password state
   const [showForgot, setShowForgot] = useState(false);

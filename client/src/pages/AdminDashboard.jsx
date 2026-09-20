@@ -131,25 +131,18 @@ export default function AdminDashboard() {
     setLoading(true);
     try {
       const d = await api.get('/admin/staff-accounts');
-      setStaffAccounts(d.staff || []);
+      // Only show conductors in the password manager
+      const conductors = (d.staff || []).filter(s => s.role === 'conductor');
+      setStaffAccounts(conductors);
       setPageError(prev => (prev && prev.includes('staff') ? '' : prev));
     } catch (err) {
-      // Graceful fallback while cloud backend is deploying the new commit
+      // Graceful fallback while cloud backend is deploying
       if (err.message && (err.message.includes('404') || err.message.includes('not found'))) {
-        const instStaff = (institutions || []).map((inst, idx) => ({
-          id: inst.user_id || inst.id || `inst_${idx}`,
-          name: inst.head_name || inst.admin_name || inst.name,
-          email: inst.admin_email || `${(inst.name || 'college').toLowerCase().replace(/[^a-z0-9]/g, '')}@kerala.gov.in`,
-          phone: inst.contact_phone || '—',
-          role: 'institution',
-          institution_name: inst.name,
-          institution_district: inst.district
-        }));
         const defaultConductors = [
-          { id: 'c1', name: 'Rajesh Kumar', email: 'conductor1@ksrtc.in', phone: '9400012346', role: 'conductor', institution_name: null },
-          { id: 'c2', name: 'Pradeep Nair', email: 'conductor2@ksrtc.in', phone: '9400012347', role: 'conductor', institution_name: null }
+          { id: 'c1', name: 'Rajesh Kumar', email: 'conductor1@ksrtc.in', phone: '9400012346', role: 'conductor' },
+          { id: 'c2', name: 'Pradeep Nair', email: 'conductor2@ksrtc.in', phone: '9400012347', role: 'conductor' },
         ];
-        setStaffAccounts([...instStaff, ...defaultConductors]);
+        setStaffAccounts(defaultConductors);
         setPageError(prev => (prev && prev.includes('staff') ? '' : prev));
       } else {
         setPageError('Could not load staff accounts: ' + err.message);
@@ -874,10 +867,10 @@ export default function AdminDashboard() {
           )
         )}
 
-        {/* PASSWORDS TAB (Conductor & College Password Manager) */}
+        {/* PASSWORDS TAB — Conductor Password Manager only */}
         {tab === 'passwords' && (
           loading ? (
-            <div className="loading-page" style={{ paddingTop: '2rem' }}><span className="spinner" /> Loading staff accounts…</div>
+            <div className="loading-page" style={{ paddingTop: '2rem' }}><span className="spinner" /> Loading conductor accounts…</div>
           ) : (
             <div>
               <div style={{
@@ -897,43 +890,25 @@ export default function AdminDashboard() {
                     KSRTC Security Administration
                   </div>
                   <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0.25rem 0' }}>
-                    🔐 Depot & Institution Password Manager
+                    🔐 Bus Conductor Password Manager
                   </h2>
                   <p style={{ fontSize: '0.85rem', opacity: 0.9, maxWidth: '650px' }}>
-                    Generate or reset temporary access passwords for bus conductors and educational institutions. Provide generated credentials during telephone inquiries or depot assignments.
+                    Generate or reset login passwords for bus conductors. Share generated credentials with the conductor during depot assignment.
                   </p>
                 </div>
                 <div style={{ background: 'rgba(255,255,255,0.15)', padding: '0.5rem 1rem', borderRadius: '8px', textAlign: 'center' }}>
                   <div style={{ fontSize: '1.5rem', fontWeight: 800 }}>{staffAccounts.length}</div>
-                  <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Total Staff Accounts</div>
+                  <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Total Conductors</div>
                 </div>
               </div>
 
-              {/* Filters and Search */}
-              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.25rem', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                  {[
-                    { id: 'all', label: `All Staff (${staffAccounts.length})` },
-                    { id: 'institution', label: `Colleges & Schools (${staffAccounts.filter(s => s.role === 'institution').length})` },
-                    { id: 'conductor', label: `Bus Conductors (${staffAccounts.filter(s => s.role === 'conductor').length})` },
-                  ].map(f => (
-                    <button
-                      key={f.id}
-                      type="button"
-                      onClick={() => setStaffFilter(f.id)}
-                      className={`btn btn--sm ${staffFilter === f.id ? 'btn--primary' : 'btn--outline'}`}
-                      style={{ fontSize: '0.8rem', padding: '0.35rem 0.75rem' }}
-                    >
-                      {f.label}
-                    </button>
-                  ))}
-                </div>
-
+              {/* Search */}
+              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.25rem', alignItems: 'center' }}>
                 <div style={{ minWidth: '260px', flex: 1, maxWidth: '400px' }}>
                   <input
                     type="text"
                     className="form-input"
-                    placeholder="Search by staff name, email, college or phone..."
+                    placeholder="Search by conductor name, email or phone..."
                     value={staffSearch}
                     onChange={e => setStaffSearch(e.target.value)}
                     style={{ fontSize: '0.85rem', padding: '0.4rem 0.75rem' }}

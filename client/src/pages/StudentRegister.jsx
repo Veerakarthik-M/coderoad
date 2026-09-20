@@ -269,11 +269,22 @@ function FileUpload({ label, id, accept, hint, onFile, file, required = false })
 }
 
 
-const STUDENT_DRAFT_KEY = 'anavandi_student_draft_v1';
+// Draft key is user-specific — prefix with logged-in user email so
+// different users (or the same device shared by multiple students)
+// never see each other's form draft.
+function getDraftKey() {
+  try {
+    const u = JSON.parse(localStorage.getItem('anavandi_user') || 'null');
+    const uid = u?.email || u?.id || 'anon';
+    return `anavandi_student_draft_v1_${uid}`;
+  } catch (_) {
+    return 'anavandi_student_draft_v1_anon';
+  }
+}
 
 function getSavedDraft() {
   try {
-    const raw = localStorage.getItem(STUDENT_DRAFT_KEY);
+    const raw = localStorage.getItem(getDraftKey());
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && typeof parsed.form === 'object') {
@@ -308,12 +319,13 @@ export default function StudentRegister({ onAuth }) {
   const [rationFile, setRationFile] = useState(null);
   const [uploadedDocId, setUploadedDocId] = useState(null);
 
-  // Auto-save form & step to draft
+  // Auto-save form & step to draft (user-specific key)
   useEffect(() => {
     try {
-      localStorage.setItem(STUDENT_DRAFT_KEY, JSON.stringify({ form, step }));
+      localStorage.setItem(getDraftKey(), JSON.stringify({ form, step }));
     } catch (_) {}
   }, [form, step]);
+
 
   // Sync browser back/forward buttons with wizard steps
   useEffect(() => {
@@ -338,7 +350,7 @@ export default function StudentRegister({ onAuth }) {
   };
 
   const handleClearDraft = () => {
-    try { localStorage.removeItem(STUDENT_DRAFT_KEY); } catch (_) {}
+    try { localStorage.removeItem(getDraftKey()); } catch (_) {}
     setForm(INITIAL_FORM);
     setStep(0);
     setHasRestoredDraft(false);
@@ -531,7 +543,7 @@ export default function StudentRegister({ onAuth }) {
       if (rationFile) await uploadDoc(rationFile, 'ration', appId);
 
       // 4. Clear saved draft on successful submission
-      try { localStorage.removeItem(STUDENT_DRAFT_KEY); } catch (_) {}
+      try { localStorage.removeItem(getDraftKey()); } catch (_) {}
 
       navigate('/student');
     } catch (err) {
